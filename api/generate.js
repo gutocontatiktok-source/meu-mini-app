@@ -72,6 +72,7 @@ Regras obrigatórias:
 - Prefira refeições pequenas, densas em proteína, fracionadas e de fácil digestão; evite frituras e excesso de gordura, que pioram náuseas e refluxo.
 - Se faltar proteína por baixa ingestão, sugira whey protein, colágeno com cautela, ou outro suplemento proteico, com dose em gramas, e creatina monohidratada apenas se fizer sentido; nunca prescreva medicamentos nem altere a dose da tirzepatida.
 - Respeite restrições, alergias e preferências informadas.
+- Se a meta calórica estiver abaixo da TMB do paciente, reforce proteína alta em todas as refeições, treino de força, variedade de micronutrientes e acompanhamento do médico ou nutricionista.
 - Para a meta mensal de peso, sugira perda de 2% a 4% do peso inicial por mês (0,5% a 1% por semana), nunca mais que isso, e proponha também metas mensais de dias com proteína batida, dias com água batida, sessões de treino de força e dias registrados no app.
 - Finalize o texto, depois do aviso, com o slogan do Tirze Forte em uma linha.
 - Inclua orientação de treino de força 2 a 4 vezes por semana como pilar de preservação muscular.
@@ -97,6 +98,7 @@ METAS CALCULADAS PELO APLICATIVO
 - TMB: ${Math.round(num(t.tmb))} kcal
 - GET: ${Math.round(num(t.get))} kcal
 - Meta calórica diária (déficit controlado de ${Math.round(num(t.deficitPct))}%): ${Math.round(num(t.kcal))} kcal
+- Déficit diário: ${Math.round(num(t.get) - num(t.kcal))} kcal${t.kcalMin ? ` (faixa calórica segura de ${Math.round(num(t.kcalMin))} a ${Math.round(num(t.kcalMax))} kcal${t.baixa ? '; meta calibrada para apetite reduzido' : ''})` : ''}
 - Meta de proteína: ${Math.round(num(t.proteina))} g por dia
 - Meta de água: ${Math.round(num(t.agua))} copos de 250 ml
 - Meta de fibras: ${Math.round(num(t.fibras))} g
