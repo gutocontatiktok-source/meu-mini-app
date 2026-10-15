@@ -108,40 +108,61 @@ ENTREGUE NESTA ORDEM
 ## Metas sugeridas para o primeiro mês (peso em kg com faixa mínima e máxima, dias com proteína batida, dias com água batida, treinos de força e dias registrados no app)
 ## Sinais de alerta e aviso final`;
 
+  const modelos = [limpar(process.env.GEMINI_MODEL) || 'gemini-3.8-flash', limpar(process.env.GEMINI_FALLBACK_MODEL)].filter(Boolean);
+  const corpo = JSON.stringify({
+    systemInstruction: { parts: [{ text: systemInstruction }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.6, topP: 0.9, maxOutputTokens: 8192 }
+  });
+  const prazo = Date.now() + 55000;
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  const temporario = (s) => s === 429 || s === 500 || s === 503 || s === 504;
+  let ultimo = { status: 502, msg: 'Falha ao consultar a IA.' };
+
   try {
-    const modelo = limpar(process.env.GEMINI_MODEL) || 'gemini-3.8-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 55000);
+    for (const modelo of modelos) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
+      for (let tentativa = 0; tentativa < 3; tentativa++) {
+        const restante = prazo - Date.now();
+        if (restante < 5000) break;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, topP: 0.9, maxOutputTokens: 8192 }
-      })
-    });
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), restante);
+        let response;
+        try {
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: corpo
+          });
+        } finally {
+          clearTimeout(timer);
+        }
 
-    clearTimeout(timer);
+        const data = await response.json().catch(() => ({}));
 
-    const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+          const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+          const text = Array.isArray(parts) ? parts.map((x) => x.text || '').join('').trim() : '';
+          if (text) {
+            return res.status(200).json({ result: text });
+          }
+          ultimo = { status: 502, msg: 'A IA não retornou conteúdo. Tente novamente.' };
+        } else {
+          ultimo = { status: response.status, msg: (data && data.error && data.error.message) || 'Falha ao consultar a IA.' };
+          console.error('Gemini', modelo, response.status, ultimo.msg.slice(0, 200));
+          if (!temporario(response.status)) break;
+        }
 
-    if (!response.ok) {
-      const msg = (data && data.error && data.error.message) || 'Falha ao consultar a IA.';
-      return res.status(response.status === 429 ? 429 : 502).json({ error: msg });
+        if (tentativa < 2) await espera(1500 * (tentativa + 1));
+      }
     }
 
-    const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
-    const text = Array.isArray(parts) ? parts.map((x) => x.text || '').join('').trim() : '';
-
-    if (!text) {
-      return res.status(502).json({ error: 'A IA não retornou conteúdo. Tente novamente.' });
+    if (temporario(ultimo.status)) {
+      return res.status(503).json({ error: 'A IA está com alta demanda no momento. Aguarde alguns segundos e tente de novo.' });
     }
-
-    return res.status(200).json({ result: text });
+    return res.status(502).json({ error: ultimo.msg });
   } catch (err) {
     if (err && err.name === 'AbortError') {
       return res.status(504).json({ error: 'Tempo esgotado ao gerar o plano. Tente novamente.' });
