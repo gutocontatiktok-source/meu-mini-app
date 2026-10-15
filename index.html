@@ -168,6 +168,18 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
     </div>
 
     <div class="card p-5">
+      <div class="flex justify-between items-baseline gap-3">
+        <h3 class="font-bold text-white">⚖️ Peso de hoje</h3>
+        <p id="peso-hoje-val" class="text-sm text-gray-400"></p>
+      </div>
+      <div class="flex gap-2 mt-4">
+        <input id="peso-hoje" type="number" inputmode="decimal" min="35" max="300" step="0.1" placeholder="Ex.: 91,5" aria-label="Peso de hoje em kg">
+        <button id="peso-hoje-btn" type="button" class="shrink-0 bg-iris hover:bg-violet-300 text-ink font-bold rounded-xl px-5 transition">Registrar</button>
+      </div>
+      <p id="peso-hoje-hint" class="text-xs text-gray-500 mt-3 leading-relaxed"></p>
+    </div>
+
+    <div class="card p-5">
       <h3 class="font-bold text-white">✅ Hábitos de base</h3>
       <div id="habitos" class="divide-y divide-line mt-2"></div>
     </div>
@@ -350,9 +362,9 @@ const DESAFIOS = [
   { id: 'mastigar', icone: '🍽️', titulo: 'Comer sem mexer no celular', tag: 'Foco na mastigação e na presença',
     texto: 'Em pelo menos uma refeição de hoje, deixe o celular e a TV de lado. Comer devagar e com atenção ajuda você a perceber a saciedade chegando, o que é ótimo com a tirzepatida e ainda evita o enjoo de comer rápido.',
     itens: ['Pouse o garfo entre uma garfada e outra', 'Mastigue bem cada porção, de 15 a 20 vezes', 'Comece pela proteína do prato', 'Faça a refeição durar pelo menos 20 minutos'] },
-  { id: 'cha', icone: '🍵', titulo: 'Ansiolítico Natural', tag: 'Pausa com chá, calma e hidratação',
-    texto: 'Faça uma pausa com um chá quente e sem açúcar. O ritual acalma a ansiedade, ajuda a bater a meta de líquidos e pode aliviar a sensação de inchaço.',
-    itens: ['Camomila ou erva-cidreira: clássicos calmantes, ótimos à noite', 'Hibisco: muito usado para a sensação de inchaço. Fale com seu médico se usa remédio para pressão', 'Gengibre: bom aliado nos dias de enjoo', 'Chá-verde tem cafeína, prefira antes das 16h. Hortelã pode piorar o refluxo'] },
+  { id: 'cha', icone: '🍵', titulo: 'Ansiolítico Natural', tag: 'Chás calmantes, sem estimulantes',
+    texto: 'Faça uma pausa com um chá quente e sem açúcar. O ritual acalma a ansiedade, ajuda a desacelerar e ainda soma na meta de líquidos do dia. Escolha um dos chás calmantes abaixo, todos sem cafeína.',
+    itens: ['Camomila: suave e relaxante, ótima depois do jantar', 'Capim-cidreira: acalma e ajuda a aliviar o enjoo e a tensão', 'Melissa: calmante leve, boa para a ansiedade do fim da tarde', 'Mulungu e passiflora: mais fortes, podem dar sono. Prefira à noite e não dirija depois', 'Se usa ansiolítico, antidepressivo ou está grávida, converse com seu médico antes de tomar mulungu e passiflora'] },
   { id: 'chef', icone: '👩‍🍳', titulo: 'Chef por um Dia', tag: 'Receita nova para variar a dieta',
     texto: 'Hoje, prepare uma receita saudável diferente. Variar o cardápio evita a monotonia, ajuda a manter a constância e traz mais nutrientes. Escolha uma com proteína de destaque.',
     itens: ['Omelete de forno com legumes', 'Panqueca de frango desfiado na frigideira', 'Mousse de iogurte grego com frutas e whey', 'Sopa cremosa de abóbora com frango desfiado, ótima em dia de pouco apetite'] },
@@ -550,6 +562,13 @@ function renderHoje() {
   $('agua-hint').textContent = falta ? `Faltam ${ml(falta)} ml (${Math.ceil(falta / 250)} copos). Beba aos goles ao longo do dia.` : 'Meta de água batida. Hidratação em dia! 💧';
   $('agua-undo').disabled = dia.agua <= 0;
 
+  const ps = store.get('tz_pesos', []);
+  const pHoje = ps.find((x) => x.d === diaISO);
+  const pAnt = ps.filter((x) => x.d < diaISO).pop();
+  $('peso-hoje-val').innerHTML = pHoje ? `<span class="text-white font-bold">${kg(pHoje.kg)}</span> kg registrado` : 'Ainda não registrado hoje';
+  $('peso-hoje-hint').textContent = pHoje && pAnt ? `Variação desde ${pAnt.d.slice(8)}/${pAnt.d.slice(5, 7)}: ${sinal(pHoje.kg - pAnt.kg)} kg. Seu peso aparece no gráfico da aba Evolução.`
+    : pAnt ? `Último peso: ${kg(pAnt.kg)} kg em ${pAnt.d.slice(8)}/${pAnt.d.slice(5, 7)}. Pese-se sempre no mesmo horário, de preferência em jejum.` : 'Pese-se sempre no mesmo horário, de preferência em jejum. Seu peso aparece no gráfico da aba Evolução.';
+
   $('habitos').innerHTML = HABITOS.map(([k, n, i]) => {
     const on = dia.hab.includes(k);
     return `<div class="flex items-center justify-between gap-3 py-3"><div class="flex items-center gap-3 min-w-0"><span class="text-xl" aria-hidden="true">${i}</span><span class="text-sm text-gray-200">${n}</span></div><div class="seg" role="group" aria-label="${n}"><button type="button" class="nao" data-h="${k}" data-v="0" aria-pressed="${!on}">Não</button><button type="button" class="sim" data-h="${k}" data-v="1" aria-pressed="${on}">Sim</button></div></div>`;
@@ -574,6 +593,16 @@ $('desafio').addEventListener('change', (e) => {
   if (e.target.dataset.dp === undefined) return;
   mudar((x) => { x.dc.p = tog(x.dc.p, Number(e.target.dataset.dp), e.target.checked); });
 });
+function registrarPesoHoje() {
+  const v = parseFloat($('peso-hoje').value.replace(',', '.'));
+  if (!Number.isFinite(v) || v < 35 || v > 300) { aviso('Informe um peso entre 35 e 300 kg.'); return; }
+  registrarPeso(v);
+  $('peso-hoje').value = '';
+  renderHoje();
+  aviso('Peso de ' + kg(v) + ' kg registrado. Ele já aparece na Evolução.');
+}
+$('peso-hoje-btn').addEventListener('click', registrarPesoHoje);
+$('peso-hoje').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); registrarPesoHoje(); } });
 $('reset-dia').addEventListener('click', () => {
   if (!confirm('Zerar todos os registros de hoje?')) return;
   garantirDia();
