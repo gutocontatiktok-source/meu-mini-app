@@ -7,13 +7,14 @@ export default async function handler(req, res) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'Chave do Gemini não configurada nas Environment Variables da Vercel.' });
+    return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada na Vercel.' });
   }
 
   const prompt = `Atue como um nutricionista e personal trainer profissional. Crie uma sugestão resumida e direta de treino diário e meta calórica para uma pessoa de ${age} anos, ${weight}kg, cujo objetivo é: ${goal}. Formate em marcadores curtos e práticos.`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    // Chamada para a versão mais recente suportada pela API do Gemini
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
