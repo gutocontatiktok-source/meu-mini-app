@@ -1,3 +1,5 @@
+export const config = { maxDuration: 60 };
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -65,6 +67,7 @@ export default async function handler(req, res) {
 
   const systemInstruction = `Você é o assistente de nutrição do aplicativo Tirze Forte, cujo slogan é "Suas metas diárias para o uso da tirzepatida". Atue como nutricionista clínico brasileiro, especialista em pacientes em uso de tirzepatida (Mounjaro/Monjaro), com tom motivador, claro e profissional. Seu foco é preservar massa magra durante a perda de peso, garantir proteína suficiente com apetite reduzido, evitar déficits agressivos, controlar efeitos gastrointestinais (náusea, constipação, refluxo, saciedade precoce) e manter hidratação.
 Regras obrigatórias:
+- Seja objetivo: frases curtas, sem repetir informações, plano completo em cerca de 1.000 a 1.300 palavras.
 - Responda em português do Brasil, em Markdown simples (títulos com ##, listas com -, negrito com **).
 - Use somente alimentos comuns no Brasil e porções em medidas caseiras e gramas.
 - Respeite exatamente as metas calculadas de calorias e proteína recebidas; o cardápio somado deve ficar dentro de 5% dessas metas.
@@ -114,13 +117,16 @@ ENTREGUE NESTA ORDEM
 ## Metas sugeridas para o primeiro mês (peso em kg com faixa mínima e máxima, dias com proteína batida, dias com água batida, treinos de força e dias registrados no app)
 ## Sinais de alerta e aviso final`;
 
-  const modelos = [limpar(process.env.GEMINI_MODEL) || 'gemini-3.8-flash', limpar(process.env.GEMINI_FALLBACK_MODEL)].filter(Boolean);
+  const reservaEnv = limpar(process.env.GEMINI_FALLBACK_MODEL);
+  const reservas = reservaEnv ? reservaEnv.split(',').map((s) => s.trim()).filter(Boolean) : ['gemini-3.6-flash', 'gemini-3.5-flash'];
+  const modelos = [...new Set([limpar(process.env.GEMINI_MODEL) || 'gemini-3.8-flash', ...reservas])];
   const corpo = JSON.stringify({
     systemInstruction: { parts: [{ text: systemInstruction }] },
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.6, topP: 0.9, maxOutputTokens: 8192 }
+    generationConfig: { temperature: 0.6, topP: 0.9, maxOutputTokens: 4096 }
   });
-  const prazo = Date.now() + 55000;
+  const prazo = Date.now() + 54000;
+  const limiteTentativa = 30000;
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   const temporario = (s) => s === 429 || s === 500 || s === 503 || s === 504;
   let ultimo = { status: 502, msg: 'Falha ao consultar a IA.' };
@@ -128,12 +134,12 @@ ENTREGUE NESTA ORDEM
   try {
     for (const modelo of modelos) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
-      for (let tentativa = 0; tentativa < 3; tentativa++) {
+      for (let tentativa = 0; tentativa < 2; tentativa++) {
         const restante = prazo - Date.now();
         if (restante < 5000) break;
 
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), restante);
+        const timer = setTimeout(() => controller.abort(), Math.min(restante, limiteTentativa));
         let response;
         try {
           response = await fetch(url, {
@@ -142,6 +148,10 @@ ENTREGUE NESTA ORDEM
             signal: controller.signal,
             body: corpo
           });
+        } catch (e) {
+          ultimo = { status: e && e.name === 'AbortError' ? 504 : 502, msg: 'A IA demorou demais para responder.' };
+          console.error('Gemini', modelo, 'sem resposta:', e && e.name);
+          break;
         } finally {
           clearTimeout(timer);
         }
@@ -152,6 +162,7 @@ ENTREGUE NESTA ORDEM
           const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
           const text = Array.isArray(parts) ? parts.map((x) => x.text || '').join('').trim() : '';
           if (text) {
+            console.log('Gemini respondeu com', modelo);
             return res.status(200).json({ result: text });
           }
           ultimo = { status: 502, msg: 'A IA não retornou conteúdo. Tente novamente.' };
@@ -161,10 +172,13 @@ ENTREGUE NESTA ORDEM
           if (!temporario(response.status)) break;
         }
 
-        if (tentativa < 2) await espera(1500 * (tentativa + 1));
+        if (tentativa < 1) await espera(1200);
       }
     }
 
+    if (ultimo.status === 504) {
+      return res.status(504).json({ error: 'A IA demorou para responder. Tente novamente em instantes.' });
+    }
     if (temporario(ultimo.status)) {
       return res.status(503).json({ error: 'A IA está com alta demanda no momento. Aguarde alguns segundos e tente de novo.' });
     }
