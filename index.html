@@ -3,12 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Meta Diária Tirzepatida</title>
+<title>Tirze Forte | Suas metas diárias para o uso da tirzepatida</title>
 <meta name="theme-color" content="#090d16">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 tailwind.config = {
   theme: {
@@ -25,7 +27,7 @@ body { background: #090d16; color: #e5e7eb; padding-top: env(safe-area-inset-top
 input, select, textarea { background: #0b1220; border: 1px solid #1f2937; border-radius: .75rem; padding: .7rem .9rem; width: 100%; color: #f3f4f6; font-size: 16px; }
 input:focus, select:focus, textarea:focus { outline: 2px solid #a78bfa; outline-offset: 1px; border-color: transparent; }
 label.f { display: block; font-size: .8rem; font-weight: 600; color: #9ca3af; margin-bottom: .35rem; }
-.tab { padding: .6rem 1rem; border-radius: .75rem; font-weight: 600; font-size: .9rem; color: #9ca3af; transition: background .15s, color .15s; }
+.tab { padding: .5rem .8rem; border-radius: .75rem; font-weight: 600; font-size: .85rem; color: #9ca3af; transition: background .15s, color .15s; }
 .tab:hover { color: #fff; }
 .tab[aria-selected="true"] { background: #a78bfa; color: #0b0720; }
 .tab:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
@@ -56,21 +58,50 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
 </head>
 <body class="font-sans antialiased min-h-screen">
 
-<header class="sticky top-0 z-20 border-b border-line bg-ink/90 backdrop-blur" style="padding-top: env(safe-area-inset-top, 0px)">
-  <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-    <div>
-      <h1 class="font-display text-xl font-bold text-white leading-tight">Meta Diária</h1>
-      <p class="text-xs text-gray-400">Proteção de massa magra na tirzepatida</p>
+<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-[90vw] bg-panel border border-line text-sm text-gray-200 rounded-xl px-4 py-3 shadow-lg" role="status"></div>
+
+<section id="auth" class="hidden min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-6">
+      <h1 class="font-display text-4xl font-bold text-white">Tirze <span class="text-iris">Forte</span></h1>
+      <p class="text-gray-400 text-sm mt-2">Suas metas diárias para o uso da tirzepatida</p>
     </div>
-    <nav class="flex gap-1 bg-panel border border-line rounded-2xl p-1" role="tablist" aria-label="Seções">
+    <div class="card p-6">
+      <div class="flex gap-1 bg-ink border border-line rounded-2xl p-1 mb-5" role="tablist" aria-label="Acesso">
+        <button type="button" id="auth-t-login" class="tab flex-1" role="tab" aria-selected="true">Entrar</button>
+        <button type="button" id="auth-t-cad" class="tab flex-1" role="tab" aria-selected="false">Criar conta</button>
+      </div>
+      <form id="auth-form" class="space-y-4" novalidate>
+        <div><label class="f" for="auth-email">E-mail</label><input id="auth-email" type="email" autocomplete="email" placeholder="voce@email.com" required></div>
+        <div><label class="f" for="auth-senha">Senha</label><input id="auth-senha" type="password" minlength="6" autocomplete="current-password" placeholder="Mínimo de 6 caracteres" required></div>
+        <p id="auth-msg" class="text-sm hidden" role="alert"></p>
+        <button id="auth-btn" type="submit" class="w-full flex items-center justify-center gap-3 bg-iris hover:bg-violet-300 disabled:opacity-60 disabled:cursor-not-allowed text-ink font-bold rounded-xl px-5 py-3.5 transition">
+          <svg id="auth-spin" class="hidden animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+          <span id="auth-btn-txt">Entrar</span>
+        </button>
+      </form>
+    </div>
+    <p class="text-xs text-gray-600 text-center mt-4">Conteúdo educativo. Não substitui médico ou nutricionista.</p>
+  </div>
+</section>
+
+<header id="app-header" class="hidden sticky top-0 z-20 border-b border-line bg-ink/90 backdrop-blur" style="padding-top: env(safe-area-inset-top, 0px)">
+  <div class="max-w-3xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-bold text-white leading-tight">Tirze <span class="text-iris">Forte</span></h1>
+      <p class="text-xs text-gray-400">Suas metas diárias para o uso da tirzepatida</p>
+    </div>
+    <nav class="order-last sm:order-none w-full sm:w-auto flex gap-1 bg-panel border border-line rounded-2xl p-1 overflow-x-auto" role="tablist" aria-label="Seções">
       <button class="tab" role="tab" data-tab="hoje" aria-selected="true">Hoje</button>
       <button class="tab" role="tab" data-tab="plano" aria-selected="false">Meu plano</button>
+      <button class="tab" role="tab" data-tab="evolucao" aria-selected="false">Evolução</button>
       <button class="tab" role="tab" data-tab="guia" aria-selected="false">Guia</button>
     </nav>
+    <button id="btn-sair" type="button" class="order-1 sm:order-none border border-line hover:border-iris text-sm font-semibold rounded-xl px-4 py-2 transition">Sair</button>
   </div>
 </header>
 
-<main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+<main id="app-main" class="hidden max-w-3xl mx-auto px-4 py-6 space-y-6">
 
 <section id="tab-hoje" role="tabpanel" class="space-y-5">
   <div id="hoje-vazio" class="card p-6 text-center hidden">
@@ -191,6 +222,66 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
   </div>
 </section>
 
+<section id="tab-evolucao" role="tabpanel" class="space-y-5 hidden">
+  <div id="evo-vazio" class="card p-6 text-center hidden">
+    <h2 class="font-display text-2xl font-bold text-white">Sua evolução começa no primeiro registro</h2>
+    <p class="text-gray-400 mt-2">Calcule suas metas em Meu plano e registre seus dias para acompanhar o progresso mês a mês.</p>
+    <button data-go="plano" class="mt-5 bg-iris hover:bg-violet-300 text-ink font-bold rounded-xl px-5 py-3 transition">Calcular minhas metas</button>
+  </div>
+
+  <div id="evo-app" class="space-y-5 hidden">
+    <div class="card p-5">
+      <div class="flex items-center justify-between gap-3">
+        <button id="mes-ant" class="border border-line hover:border-iris rounded-xl px-4 py-2 transition" aria-label="Mês anterior">&lsaquo;</button>
+        <div class="text-center">
+          <h2 id="evo-mes" class="font-display text-2xl font-bold text-white capitalize"></h2>
+          <p id="evo-sub" class="text-sm text-gray-400 mt-1"></p>
+        </div>
+        <button id="mes-prox" class="border border-line hover:border-iris disabled:opacity-40 disabled:cursor-not-allowed rounded-xl px-4 py-2 transition" aria-label="Próximo mês">&rsaquo;</button>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-white">Peso</h3>
+      <div id="evo-peso" class="grid grid-cols-3 gap-3 mt-4"></div>
+      <p id="evo-peso-msg" class="text-sm text-gray-400 mt-4 leading-relaxed"></p>
+      <div class="flex gap-2 mt-4">
+        <input id="peso-add" type="number" inputmode="decimal" min="35" max="300" step="0.1" placeholder="Peso de hoje (kg)" aria-label="Peso de hoje em kg">
+        <button id="peso-btn" class="shrink-0 bg-iris hover:bg-violet-300 text-ink font-bold rounded-xl px-5 transition">Registrar</button>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-white">Metas sugeridas para o mês</h3>
+      <div id="evo-metas" class="space-y-4 mt-4"></div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-white">Pontuação de cada dia</h3>
+      <div id="evo-chart" class="flex items-end gap-[3px] h-28 mt-4"></div>
+      <p class="text-xs text-gray-500 mt-2">Cada barra é um dia do mês. Dias sem registro ficam vazios.</p>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-white">Evolução ao longo do tempo</h3>
+      <p class="text-xs text-gray-500 mt-1">Peso e pontuação diária de todo o seu histórico. Toque nos pontos para ver os valores.</p>
+      <div class="relative h-64 mt-4"><canvas id="grafico" role="img" aria-label="Gráfico de evolução de peso e pontuação diária"></canvas></div>
+      <p id="grafico-vazio" class="text-sm text-gray-400 mt-4 hidden">Registre seu peso e seus dias para ver o gráfico.</p>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-white">Resultados salvos</h3>
+      <p id="hist-vazio" class="text-sm text-gray-400 mt-3">Cada plano que você gerar fica salvo aqui.</p>
+      <div id="hist-lista" class="space-y-2 mt-4"></div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-white">Mês a mês</h3>
+      <div class="overflow-x-auto mt-3"><table id="evo-tab" class="w-full text-sm text-left"></table></div>
+    </div>
+  </div>
+</section>
+
 <section id="tab-guia" role="tabpanel" class="space-y-3 hidden">
   <div class="mb-2">
     <h2 class="font-display text-2xl font-bold text-white">O que comer e por quê</h2>
@@ -223,12 +314,23 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
 
 </main>
 
-<footer class="max-w-3xl mx-auto px-4 pb-10 text-xs text-gray-600">
-  Conteúdo educativo. Não substitui consulta com médico ou nutricionista. Nunca altere a dose da medicação por conta própria.
+<footer id="app-footer" class="hidden max-w-3xl mx-auto px-4 pb-10 text-xs text-gray-600">
+  Tirze Forte. Conteúdo educativo. Não substitui consulta com médico ou nutricionista. Nunca altere a dose da medicação por conta própria.
 </footer>
 
 <script>
 const $ = (id) => document.getElementById(id);
+const SUPABASE_URL = "https://jtejnzemyeqnfbnowejy.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "sb_publishable_RgqGDUtSOWIGZ4-uLpTMNA_6glHLEFn";
+let sb = null;
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch {}
+let user = null;
+let mem = {};
+let historico = [];
+let grafico = null;
+let perfilTimer;
+let avisoTimer;
+if (window.Chart) { Chart.defaults.color = '#9ca3af'; Chart.defaults.font.family = 'Manrope, system-ui, sans-serif'; }
 const REFEICOES = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia proteica'];
 const OUTRAS = [
   ['fibras', 'Comi fibras suficientes (frutas, aveia, feijão, verduras)'],
@@ -237,14 +339,37 @@ const OUTRAS = [
   ['suplemento', 'Tomei o suplemento proteico planejado'],
   ['sono', 'Dormi bem (7 horas ou mais)']
 ];
+function aviso(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(avisoTimer);
+  avisoTimer = setTimeout(() => t.classList.add('hidden'), 5000);
+}
+function falhaNuvem(r) { if (r && r.error) aviso('Não foi possível salvar seus dados na nuvem.'); }
+function persistir(k, v) {
+  if (!sb || !user) return;
+  if (k.startsWith('tz_dia_')) {
+    sb.from('dias').upsert({ user_id: user.id, dia: k.slice(7), dados: v }, { onConflict: 'user_id,dia' }).then(falhaNuvem);
+  } else if (k === 'tz_pesos') {
+    if (v.length) sb.from('pesos').upsert(v.map((p) => ({ user_id: user.id, dia: p.d, kg: p.kg })), { onConflict: 'user_id,dia' }).then(falhaNuvem);
+  } else if (k === 'tz_perfil' || k === 'tz_metas') {
+    clearTimeout(perfilTimer);
+    perfilTimer = setTimeout(() => {
+      if (!user) return;
+      sb.from('perfis').upsert({ user_id: user.id, perfil: mem.tz_perfil || null, metas: mem.tz_metas || null, atualizado_em: new Date().toISOString() }, { onConflict: 'user_id' }).then(falhaNuvem);
+    }, 400);
+  }
+}
 const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  get(k, d) { return k in mem ? mem[k] : d; },
+  set(k, v) { mem[k] = v; persistir(k, v); }
 };
-const hojeKey = () => 'tz_dia_' + new Date().toISOString().slice(0, 10);
-let metas = store.get('tz_metas', null);
-let perfil = store.get('tz_perfil', null);
-let dia = store.get(hojeKey(), { agua: 0, prot: 0, kcal: 0, ref: [], out: [] });
+const isoLocal = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const hojeKey = () => 'tz_dia_' + isoLocal();
+let metas = null;
+let perfil = null;
+let dia = { agua: 0, prot: 0, kcal: 0, ref: [], out: [] };
 let ultimoTexto = '';
 
 function calcular(p) {
@@ -267,15 +392,16 @@ function calcular(p) {
 }
 
 function trocarAba(nome) {
-  ['hoje', 'plano', 'guia'].forEach((n) => $('tab-' + n).classList.toggle('hidden', n !== nome));
+  ['hoje', 'plano', 'evolucao', 'guia'].forEach((n) => $('tab-' + n).classList.toggle('hidden', n !== nome));
   document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === nome)));
   if (nome === 'hoje') renderHoje();
+  if (nome === 'evolucao') renderEvolucao();
   window.scrollTo({ top: 0 });
 }
 document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.tab)));
 document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.go)));
 
-function salvarDia() { store.set(hojeKey(), dia); renderHoje(); }
+function salvarDia() { dia.m = { proteina: metas.proteina, agua: metas.agua, kcal: metas.kcal }; store.set(hojeKey(), dia); renderHoje(); }
 
 function renderMetas() {
   if (!metas) return;
@@ -288,6 +414,13 @@ function renderMetas() {
   ).join('');
   $('metas-nota').textContent = `Déficit controlado de ${metas.deficitPct}% sobre o GET (Mifflin-St Jeor). Proteína entre ${metas.protMin} e ${metas.protMax} g, calculada sobre ${metas.refPeso} kg de peso de referência (IMC ${metas.imc}).`;
   $('metas-box').classList.remove('hidden');
+}
+
+function calcScore(d, m) {
+  const r = (v, t) => Math.min(1, v / t);
+  const kcalOk = d.kcal > 0 && d.kcal >= m.kcal * 0.9 && d.kcal <= m.kcal * 1.05 ? 1 : 0;
+  const pontos = r(d.agua, m.agua) + r(d.prot, m.proteina) + kcalOk + d.ref.length / REFEICOES.length + d.out.length / OUTRAS.length;
+  return Math.round((pontos / 5) * 100);
 }
 
 function renderHoje() {
@@ -315,9 +448,7 @@ function renderHoje() {
   $('outras').innerHTML = OUTRAS.map(([k, n]) =>
     `<label class="chk"><input type="checkbox" data-o="${k}" ${dia.out.includes(k) ? 'checked' : ''}><span class="text-sm">${n}</span></label>`
   ).join('');
-  const kcalOk = dia.kcal > 0 && dia.kcal >= metas.kcal * 0.9 && dia.kcal <= metas.kcal * 1.05 ? 1 : 0;
-  const pontos = pct(dia.agua, metas.agua) / 100 + pct(dia.prot, metas.proteina) / 100 + kcalOk + dia.ref.length / REFEICOES.length + dia.out.length / OUTRAS.length;
-  const score = Math.round((pontos / 5) * 100);
+  const score = calcScore(dia, metas);
   $('score').textContent = score;
   $('score-bar').style.width = score + '%';
   $('score-msg').textContent = score >= 90 ? 'Dia excelente. Constância é o que gera resultado.' : score >= 60 ? 'Bom ritmo. Ainda dá para fechar as metas que faltam.' : 'Comece pela proteína e pela água, são as metas de maior impacto.';
@@ -393,7 +524,8 @@ function erro(msg) {
   e.classList.toggle('hidden', !msg);
 }
 
-if (perfil) {
+function aplicarPerfil() {
+  if (!perfil) return;
   ['sexo', 'idade', 'peso', 'altura', 'dose', 'tempoUso', 'sintomas', 'restricoes', 'preferencias'].forEach((k) => { if (perfil[k] !== undefined) $(k).value = perfil[k]; });
   $('atividade').value = String(perfil.fator);
   $('suplementos').checked = !!perfil.suplementos;
@@ -417,19 +549,24 @@ $('form').addEventListener('submit', async (e) => {
   perfil = p;
   store.set('tz_metas', metas);
   store.set('tz_perfil', p);
+  registrarPeso(p.peso);
   renderMetas();
   renderHoje();
   carregar(true);
   $('resultado-box').classList.add('hidden');
+  let plano = null;
   try {
+    const { data: sess } = await sb.auth.getSession();
+    const token = sess && sess.session ? sess.session.access_token : '';
     const r = await fetch('/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ perfil: p, metas })
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok || !data.result) throw new Error(data.error || 'Não foi possível gerar o plano agora.');
     ultimoTexto = data.result;
+    plano = data.result;
     $('resultado').innerHTML = markdown(data.result);
     $('resultado-box').classList.remove('hidden');
     $('resultado-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -437,6 +574,7 @@ $('form').addEventListener('submit', async (e) => {
     erro(err.message + ' Suas metas foram calculadas e já estão disponíveis na aba Hoje.');
   } finally {
     carregar(false);
+    await salvarHistorico(plano);
   }
 });
 
@@ -457,7 +595,300 @@ $('btn-copiar').addEventListener('click', async () => {
   setTimeout(() => { b.textContent = 'Copiar resultado'; }, 1800);
 });
 
-renderHoje();
+let mesSel = isoLocal().slice(0, 7);
+const nomeMes = (ym) => { const [y, m] = ym.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); };
+const kg = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const sinal = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + kg(Math.abs(v));
+
+function registrarPeso(valor) {
+  const hoje = isoLocal();
+  const lista = store.get('tz_pesos', []).filter((p) => p.d !== hoje);
+  lista.push({ d: hoje, kg: valor });
+  lista.sort((a, b) => (a.d < b.d ? -1 : 1));
+  store.set('tz_pesos', lista);
+}
+
+function resumoMes(ym) {
+  const [y, mo] = ym.split('-').map(Number);
+  const total = new Date(y, mo, 0).getDate();
+  const dias = [];
+  for (let i = 1; i <= total; i++) dias.push(store.get('tz_dia_' + ym + '-' + String(i).padStart(2, '0'), null));
+  const at = dias.filter(Boolean);
+  const mm = (d) => d.m || metas;
+  const conta = (f) => at.filter(f).length;
+  const media = (f) => (at.length ? Math.round(at.reduce((s, d) => s + f(d), 0) / at.length) : 0);
+  const pesos = store.get('tz_pesos', []).filter((p) => p.d.startsWith(ym));
+  return {
+    total, dias, n: at.length,
+    scores: dias.map((d) => (d ? calcScore(d, mm(d)) : null)),
+    score: media((d) => calcScore(d, mm(d))),
+    hitProt: conta((d) => d.prot >= mm(d).proteina * 0.9),
+    hitAgua: conta((d) => d.agua >= mm(d).agua * 0.9),
+    treino: conta((d) => d.out.includes('treino')),
+    pesoFim: pesos.length ? pesos[pesos.length - 1].kg : null
+  };
+}
+
+function mesesComDados() {
+  const set = new Set([isoLocal().slice(0, 7)]);
+  try { Object.keys(mem).forEach((k) => { if (k.startsWith('tz_dia_')) set.add(k.slice(7, 14)); }); } catch {}
+  store.get('tz_pesos', []).forEach((p) => set.add(p.d.slice(0, 7)));
+  return [...set].sort();
+}
+
+function renderEvolucao() {
+  $('evo-vazio').classList.toggle('hidden', !!metas);
+  $('evo-app').classList.toggle('hidden', !metas);
+  if (!metas) return;
+  const r = resumoMes(mesSel);
+  $('evo-mes').textContent = nomeMes(mesSel);
+  $('evo-sub').textContent = r.n + ' de ' + r.total + ' dias registrados';
+  $('mes-prox').disabled = mesSel >= isoLocal().slice(0, 7);
+
+  const todos = store.get('tz_pesos', []);
+  const antes = todos.filter((p) => p.d < mesSel + '-01');
+  const noMes = todos.filter((p) => p.d.startsWith(mesSel));
+  const base = antes.length ? antes[antes.length - 1].kg : noMes.length ? noMes[0].kg : null;
+  const fim = noMes.length ? noMes[noMes.length - 1].kg : null;
+  const inicio = todos.length ? todos[0].kg : null;
+  const atual = todos.length ? todos[todos.length - 1].kg : null;
+  const card = (t, v) => `<div class="rounded-2xl border border-line bg-ink p-3"><p class="text-xs text-gray-400">${t}</p><p class="font-display text-lg font-bold text-white mt-1">${v}</p></div>`;
+  const dMes = base !== null && fim !== null ? fim - base : null;
+  $('evo-peso').innerHTML = card('Peso atual', atual !== null ? kg(atual) + ' kg' : '—') + card('No mês', dMes !== null ? sinal(dMes) + ' kg' : '—') + card('Desde o início', inicio !== null && atual !== null ? sinal(atual - inicio) + ' kg' : '—');
+
+  let msg = 'Registre seu peso para acompanhar a evolução. Uma vez por semana, sempre no mesmo horário, já é suficiente.';
+  if (base !== null) {
+    const min = base * 0.02, max = base * 0.04;
+    msg = `Meta sugerida: perder entre ${kg(min)} e ${kg(max)} kg neste mês (2% a 4% do peso de partida, ou 0,5% a 1% por semana). `;
+    if (dMes !== null) {
+      const perda = -dMes, pc = (perda / base) * 100;
+      if (pc > 4.5) msg += 'Sua perda está acima do ritmo recomendado. Converse com seu médico ou nutricionista e confira se está batendo a proteína e as calorias.';
+      else if (pc >= 2) msg += 'Você está dentro da faixa ideal. Continue priorizando proteína e treino de força.';
+      else if (pc > 0) msg += 'Você está abaixo da faixa, o que é comum em fases de platô. Mantenha a constância e revise proteína, água e sono.';
+      else msg += 'Sem perda de peso neste mês até agora. Platôs acontecem, mas vale revisar o plano com seu profissional de saúde.';
+    }
+  }
+  $('evo-peso-msg').textContent = msg;
+
+  const diasProt = Math.round(r.total * 0.8), treinos = Math.round((r.total / 30) * 8), regs = Math.round(r.total * 0.85);
+  const metasMes = [
+    ['Dias registrados no app', r.n, regs, ''],
+    ['Dias com proteína batida (90% da meta ou mais)', r.hitProt, diasProt, 'bg-amber2'],
+    ['Dias com água batida', r.hitAgua, diasProt, 'bg-sky2'],
+    ['Treinos de força ou caminhada', r.treino, treinos, 'bg-iris'],
+    ['Pontuação média do mês', r.score, 75, 'bg-rose2']
+  ];
+  $('evo-metas').innerHTML = metasMes.map(([t, v, alvo, cor], i) => {
+    const w = Math.min(100, Math.round((v / alvo) * 100));
+    const feito = v >= alvo ? ' <span class="text-iris">meta atingida</span>' : '';
+    return `<div><div class="flex justify-between gap-3 text-sm"><span class="text-gray-300">${t}</span><span class="text-white font-bold shrink-0">${v} / ${alvo}${i === 4 ? '%' : ''}</span></div><div class="bar mt-2"><i class="${cor || 'bg-gray-400'}" style="width:${w}%"></i></div><p class="text-xs text-gray-500 mt-1">${w}% do alvo${feito}</p></div>`;
+  }).join('');
+
+  $('evo-chart').innerHTML = r.scores.map((s, i) =>
+    `<div class="flex-1 rounded-t ${s === null ? 'bg-line' : 'bg-iris'}" style="height:${s === null ? 4 : Math.max(6, s)}%" title="Dia ${i + 1}: ${s === null ? 'sem registro' : s + '%'}"></div>`
+  ).join('');
+
+  const linhas = mesesComDados().map((ym) => {
+    const x = resumoMes(ym);
+    const pp = x.n ? Math.round((x.hitProt / x.n) * 100) + '%' : '—';
+    return `<tr class="border-t border-line"><td class="py-2 pr-3 capitalize text-white">${nomeMes(ym)}</td><td class="py-2 pr-3">${x.n}</td><td class="py-2 pr-3">${x.n ? x.score + '%' : '—'}</td><td class="py-2 pr-3">${pp}</td><td class="py-2">${x.pesoFim !== null ? kg(x.pesoFim) + ' kg' : '—'}</td></tr>`;
+  }).join('');
+  $('evo-tab').innerHTML = '<thead class="text-xs text-gray-400"><tr><th class="pb-2 pr-3 font-semibold">Mês</th><th class="pb-2 pr-3 font-semibold">Dias</th><th class="pb-2 pr-3 font-semibold">Pontuação</th><th class="pb-2 pr-3 font-semibold">Proteína</th><th class="pb-2 font-semibold">Peso</th></tr></thead><tbody class="text-gray-300">' + linhas + '</tbody>';
+  desenharGrafico();
+  renderHistorico();
+}
+
+function mudarMes(delta) {
+  const [y, m] = mesSel.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  mesSel = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  renderEvolucao();
+}
+$('mes-ant').addEventListener('click', () => mudarMes(-1));
+$('mes-prox').addEventListener('click', () => mudarMes(1));
+$('peso-btn').addEventListener('click', () => {
+  const v = parseFloat($('peso-add').value);
+  if (!Number.isFinite(v) || v < 35 || v > 300) return;
+  registrarPeso(v);
+  $('peso-add').value = '';
+  mesSel = isoLocal().slice(0, 7);
+  renderEvolucao();
+});
+
+async function salvarHistorico(plano) {
+  if (!sb || !user || !perfil || !metas) return;
+  const linha = { user_id: user.id, peso: perfil.peso, tmb: metas.tmb, get_kcal: metas.get, kcal: metas.kcal, proteina: metas.proteina, agua: metas.agua, fibras: metas.fibras, plano, perfil };
+  const { data, error } = await sb.from('historico').insert(linha).select().single();
+  if (error) { aviso('Não foi possível salvar este resultado no histórico.'); return; }
+  historico.unshift(data);
+}
+
+function renderHistorico() {
+  $('hist-vazio').classList.toggle('hidden', historico.length > 0);
+  $('hist-lista').innerHTML = historico.map((h) => {
+    const data = new Date(h.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const corpo = h.plano ? '<div class="prose-out mt-4">' + markdown(h.plano) + '</div>' : '<p class="mt-4 text-sm text-gray-400">Este registro guardou apenas as metas calculadas.</p>';
+    return `<details class="g rounded-2xl border border-line bg-ink p-4"><summary><span>${data} - ${kg(Number(h.peso))} kg</span><span class="text-xs text-gray-400 font-normal ml-auto">${h.kcal} kcal / ${h.proteina} g de proteína</span></summary>${corpo}</details>`;
+  }).join('');
+}
+
+function desenharGrafico() {
+  if (grafico) { grafico.destroy(); grafico = null; }
+  const mapa = {};
+  (store.get('tz_pesos', [])).forEach((p) => { (mapa[p.d] = mapa[p.d] || {}).peso = p.kg; });
+  Object.keys(mem).filter((k) => k.startsWith('tz_dia_')).forEach((k) => {
+    const d = mem[k];
+    (mapa[k.slice(7)] = mapa[k.slice(7)] || {}).score = calcScore(d, d.m || metas);
+  });
+  const datas = Object.keys(mapa).sort();
+  $('grafico-vazio').classList.toggle('hidden', datas.length > 0);
+  if (!datas.length || typeof Chart === 'undefined') return;
+  const grade = { color: '#1f2937' };
+  grafico = new Chart($('grafico'), {
+    type: 'line',
+    data: {
+      labels: datas.map((d) => d.slice(8) + '/' + d.slice(5, 7)),
+      datasets: [
+        { label: 'Peso (kg)', data: datas.map((d) => (mapa[d].peso !== undefined ? mapa[d].peso : null)), borderColor: '#a78bfa', backgroundColor: '#a78bfa', yAxisID: 'y', spanGaps: true, tension: 0.3, pointRadius: 4 },
+        { label: 'Pontuação do dia (%)', data: datas.map((d) => (mapa[d].score !== undefined ? mapa[d].score : null)), borderColor: '#fbbf24', backgroundColor: '#fbbf24', yAxisID: 'y1', spanGaps: true, tension: 0.3, pointRadius: 3, borderDash: [5, 4] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { grid: grade },
+        y: { position: 'left', title: { display: true, text: 'kg' }, grid: grade },
+        y1: { position: 'right', min: 0, max: 100, title: { display: true, text: '%' }, grid: { drawOnChartArea: false } }
+      },
+      plugins: { legend: { labels: { color: '#cbd5e1' } } }
+    }
+  });
+}
+
+let modoCadastro = false;
+function authMsg(txt, ok) {
+  const m = $('auth-msg');
+  m.textContent = txt || '';
+  m.className = 'text-sm ' + (ok ? 'text-iris' : 'text-rose2') + (txt ? '' : ' hidden');
+}
+function authLoad(on) {
+  $('auth-btn').disabled = on;
+  $('auth-spin').classList.toggle('hidden', !on);
+  $('auth-btn-txt').textContent = on ? 'Aguarde...' : (modoCadastro ? 'Criar minha conta' : 'Entrar');
+}
+function setModo(cad) {
+  modoCadastro = cad;
+  $('auth-t-login').setAttribute('aria-selected', String(!cad));
+  $('auth-t-cad').setAttribute('aria-selected', String(cad));
+  $('auth-btn-txt').textContent = cad ? 'Criar minha conta' : 'Entrar';
+  $('auth-senha').setAttribute('autocomplete', cad ? 'new-password' : 'current-password');
+  authMsg('');
+}
+function traduzir(m) {
+  const t = String(m || '');
+  if (/invalid login/i.test(t)) return 'E-mail ou senha incorretos.';
+  if (/already registered/i.test(t)) return 'Este e-mail já tem conta. Use a aba Entrar.';
+  if (/not confirmed/i.test(t)) return 'Confirme seu e-mail pelo link que enviamos antes de entrar.';
+  if (/password/i.test(t) && /6/.test(t)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (/rate limit|too many/i.test(t)) return 'Muitas tentativas. Aguarde um pouco e tente de novo.';
+  return t || 'Não foi possível concluir. Tente novamente.';
+}
+$('auth-t-login').addEventListener('click', () => setModo(false));
+$('auth-t-cad').addEventListener('click', () => setModo(true));
+$('auth-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!sb) { authMsg('Configure SUPABASE_URL e SUPABASE_ANON_KEY no topo do script do index.html.'); return; }
+  const email = $('auth-email').value.trim();
+  const senha = $('auth-senha').value;
+  if (!/^\S+@\S+\.\S+$/.test(email) || senha.length < 6) { authMsg('Informe um e-mail válido e uma senha de pelo menos 6 caracteres.'); return; }
+  authMsg('');
+  authLoad(true);
+  try {
+    if (modoCadastro) {
+      const { data, error } = await sb.auth.signUp({ email, password: senha });
+      if (error) throw error;
+      if (!data.session) { setModo(false); authMsg('Conta criada. Enviamos um link de confirmação para o seu e-mail.', true); }
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+      if (error) throw error;
+    }
+  } catch (err) {
+    authMsg(traduzir(err.message));
+  } finally {
+    authLoad(false);
+  }
+});
+
+const PARTES = ['app-header', 'app-main', 'app-footer'];
+function mostrarAuth() {
+  PARTES.forEach((id) => $(id).classList.add('hidden'));
+  $('auth').classList.remove('hidden');
+  $('auth-senha').value = '';
+}
+
+async function carregarNuvem() {
+  mem = {};
+  historico = [];
+  const [pf, ds, ps, hs] = await Promise.all([
+    sb.from('perfis').select('perfil,metas').maybeSingle(),
+    sb.from('dias').select('dia,dados'),
+    sb.from('pesos').select('dia,kg').order('dia'),
+    sb.from('historico').select('*').order('criado_em', { ascending: false }).limit(100)
+  ]);
+  if ([pf, ds, ps, hs].some((r) => r.error)) aviso('Não foi possível carregar seus dados. Confira as tabelas e permissões no Supabase.');
+  if (pf.data) {
+    if (pf.data.perfil) mem.tz_perfil = pf.data.perfil;
+    if (pf.data.metas) mem.tz_metas = pf.data.metas;
+  }
+  (ds.data || []).forEach((r) => { mem['tz_dia_' + r.dia] = r.dados; });
+  mem.tz_pesos = (ps.data || []).map((r) => ({ d: r.dia, kg: Number(r.kg) }));
+  historico = hs.data || [];
+  metas = mem.tz_metas || null;
+  perfil = mem.tz_perfil || null;
+  dia = mem['tz_dia_' + isoLocal()] || { agua: 0, prot: 0, kcal: 0, ref: [], out: [] };
+}
+
+async function entrar() {
+  $('auth').classList.add('hidden');
+  PARTES.forEach((id) => $(id).classList.remove('hidden'));
+  try { await carregarNuvem(); } catch { aviso('Falha de conexão ao carregar seus dados.'); }
+  mesSel = isoLocal().slice(0, 7);
+  aplicarPerfil();
+  renderMetas();
+  trocarAba(metas ? 'hoje' : 'plano');
+}
+
+function sair() {
+  mem = {};
+  historico = [];
+  metas = null;
+  perfil = null;
+  ultimoTexto = '';
+  dia = { agua: 0, prot: 0, kcal: 0, ref: [], out: [] };
+  $('form').reset();
+  $('metas-box').classList.add('hidden');
+  $('resultado-box').classList.add('hidden');
+  erro('');
+  if (grafico) { grafico.destroy(); grafico = null; }
+  mostrarAuth();
+}
+
+function sessaoMudou(session) {
+  const u = session ? session.user : null;
+  if (u && (!user || user.id !== u.id)) { user = u; setTimeout(entrar, 0); }
+  else if (!u && user) { user = null; sair(); }
+}
+
+$('btn-sair').addEventListener('click', () => { if (sb) sb.auth.signOut(); });
+
+if (!sb) {
+  mostrarAuth();
+  authMsg('Configure SUPABASE_URL e SUPABASE_ANON_KEY no topo do script do index.html.');
+} else {
+  sb.auth.onAuthStateChange((_evento, s) => sessaoMudou(s));
+  sb.auth.getSession().then(({ data }) => { if (data.session) sessaoMudou(data.session); else mostrarAuth(); });
+}
 </script>
 </body>
 </html>
