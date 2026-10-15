@@ -146,7 +146,7 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
         <input id="kcal-add" type="number" inputmode="decimal" min="0" placeholder="Kcal da refeição" aria-label="Calorias da refeição">
         <button id="kcal-btn" class="shrink-0 bg-rose2 hover:bg-rose-300 text-ink font-bold rounded-xl px-5 transition">Somar</button>
       </div>
-      <p class="text-xs text-gray-500 mt-3">Meta já inclui o déficit controlado. Comer muito abaixo dela também é um problema na tirzepatida.</p>
+      <p id="kcal-hint" class="text-xs text-gray-500 mt-3"></p>
     </div>
 
     <div class="card p-5">
@@ -392,10 +392,14 @@ function calcular(p) {
   const ideal = 22 * m * m;
   const ref = imc >= 30 ? ideal + 0.25 * (p.peso - ideal) : p.peso;
   const piso = p.sexo === 'masculino' ? 1500 : 1200;
-  const deficit = Math.min(get * 0.2, 750);
-  const kcal = Math.max(get - deficit, piso);
+  const pct = imc < 25 ? 0.15 : imc < 30 ? 0.2 : 0.25;
+  const teto = Math.max(get - Math.min(get * pct, 750), piso);
+  const minimo = Math.min(Math.max(piso, tmb * 0.9), teto);
+  const baixa = p.refeicoes === 4 || p.sintomas === 'Pouco apetite' || p.sintomas === 'Náusea';
+  const kcal = baixa ? minimo + (teto - minimo) * 0.3 : teto;
   return {
     tmb: Math.round(tmb), get: Math.round(get), kcal: Math.round(kcal),
+    kcalMin: Math.round(minimo), kcalMax: Math.round(teto), baixa,
     deficitPct: Math.round(((get - kcal) / get) * 100),
     proteina: Math.round(ref * 1.8), protMin: Math.round(ref * 1.6), protMax: Math.round(ref * 2.0),
     agua: Math.ceil((p.peso * 35) / 250), fibras: p.sexo === 'masculino' ? 30 : 25,
@@ -413,24 +417,33 @@ function trocarAba(nome) {
 document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.tab)));
 document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.go)));
 
-function salvarDia() { dia.m = { proteina: metas.proteina, agua: metas.agua, kcal: metas.kcal, refeicoes: metas.refeicoes }; store.set(hojeKey(), dia); renderHoje(); }
+function salvarDia() { dia.m = { proteina: metas.proteina, agua: metas.agua, kcal: metas.kcal, kcalMin: metas.kcalMin, kcalMax: metas.kcalMax, refeicoes: metas.refeicoes }; store.set(hojeKey(), dia); renderHoje(); }
 
 function renderMetas() {
   if (!metas) return;
   const itens = [
-    ['TMB', metas.tmb + ' kcal'], ['GET', metas.get + ' kcal'], ['Meta calórica', metas.kcal + ' kcal'],
+    ['TMB', metas.tmb + ' kcal'], ['GET', metas.get + ' kcal'], ['Meta calórica', metas.kcal + ' kcal'], ['Déficit', '−' + (metas.get - metas.kcal) + ' kcal'], ['Faixa segura', metas.kcalMin ? metas.kcalMin + ' a ' + metas.kcalMax : '—'],
     ['Proteína', metas.proteina + ' g'], ['Água', metas.agua + ' copos'], ['Fibras', metas.fibras + ' g'], ['Refeições', (metas.refeicoes || 6) + ' por dia']
   ];
   $('metas-grid').innerHTML = itens.map(([k, v]) =>
     `<div class="rounded-2xl border border-line bg-ink p-4"><p class="text-xs text-gray-400">${k}</p><p class="font-display text-xl font-bold text-white mt-1">${v}</p></div>`
   ).join('');
-  $('metas-nota').textContent = `Déficit controlado de ${metas.deficitPct}% sobre o GET (Mifflin-St Jeor). Proteína entre ${metas.protMin} e ${metas.protMax} g, calculada sobre ${metas.refPeso} kg de peso de referência (IMC ${metas.imc}).`;
+  const def = metas.get - metas.kcal;
+  const semana = (def * 7) / 7700;
+  let nota = `Déficit de ${def} kcal por dia (${metas.deficitPct}% do GET, Mifflin-St Jeor), cerca de ${kg(semana)} kg de gordura por semana em estimativa. Proteína entre ${metas.protMin} e ${metas.protMax} g, calculada sobre ${metas.refPeso} kg de peso de referência (IMC ${metas.imc}).`;
+  if (metas.kcalMin) nota += ` A faixa calórica segura vai de ${metas.kcalMin} a ${metas.kcalMax} kcal.`;
+  if (metas.baixa) nota += ' Como o apetite tende a ser menor no seu caso, a meta fica na parte baixa dessa faixa.';
+  if (metas.kcal < metas.tmb) nota += ' Atenção: a meta está abaixo da sua TMB. Priorize a proteína, faça treino de força e combine o ritmo com seu médico ou nutricionista.';
+  if (perfil && semana > perfil.peso * 0.01) nota += ' A perda estimada passa de 1% do peso por semana, o que aumenta o risco de perder músculo. Confira se o nível de atividade escolhido não está exagerado.';
+  $('metas-nota').textContent = nota;
   $('metas-box').classList.remove('hidden');
 }
 
 function calcScore(d, m) {
   const r = (v, t) => Math.min(1, v / t);
-  const kcalOk = d.kcal > 0 && d.kcal >= m.kcal * 0.9 && d.kcal <= m.kcal * 1.05 ? 1 : 0;
+  const lo = m.kcalMin || m.kcal * 0.9;
+  const hi = (m.kcalMax || m.kcal) * 1.05;
+  const kcalOk = d.kcal > 0 && d.kcal >= lo && d.kcal <= hi ? 1 : 0;
   const pontos = r(d.agua, m.agua) + r(d.prot, m.proteina) + kcalOk + Math.min(1, d.ref.length / (m.refeicoes || 6)) + d.out.length / OUTRAS.length;
   return Math.round((pontos / 5) * 100);
 }
@@ -449,6 +462,7 @@ function renderHoje() {
   $('kcal-val').textContent = Math.round(dia.kcal);
   $('kcal-meta').textContent = metas.kcal;
   $('kcal-bar').style.width = pct(dia.kcal, metas.kcal) + '%';
+  $('kcal-hint').textContent = metas.kcalMin ? `Faixa segura do dia: ${metas.kcalMin} a ${metas.kcalMax} kcal. Ficar dentro dela já conta como meta batida.` : 'Comer muito abaixo da meta também atrapalha a preservação de massa magra.';
   $('agua-val').textContent = dia.agua;
   $('agua-meta').textContent = metas.agua;
   $('copos').innerHTML = Array.from({ length: metas.agua }, (_, i) =>
