@@ -33,6 +33,15 @@ export default async function handler(req, res) {
     } catch {
       return res.status(502).json({ error: 'Não foi possível validar o seu login.' });
     }
+    try {
+      const h = await fetch(`${supaUrl}/rest/v1/historico?select=criado_em&plano=not.is.null&order=criado_em.desc&limit=1`, {
+        headers: { Authorization: `Bearer ${token}`, apikey: supaKey }
+      });
+      const rows = h.ok ? await h.json() : [];
+      if (rows[0] && Date.now() - new Date(rows[0].criado_em).getTime() < 30 * 86400000) {
+        return res.status(429).json({ error: 'Seu plano deste mês já foi gerado. Um novo plano é liberado após 30 dias.' });
+      }
+    } catch {}
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -96,6 +105,7 @@ PERFIL
 - Restrições e alergias: ${txt(p.restricoes)}
 - Alimentos que gosta ou evita: ${txt(p.preferencias)}
 - Aceita suplementos: ${p.suplementos ? 'sim' : 'não'}
+${body.anterior && Number(body.anterior.peso) > 0 ? `- Peso no plano anterior: ${num(body.anterior.peso)} kg (agora ${num(p.peso)} kg). Ajuste o plano considerando essa evolução.` : ''}
 
 METAS CALCULADAS PELO APLICATIVO
 - TMB: ${Math.round(num(t.tmb))} kcal
