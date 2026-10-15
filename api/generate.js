@@ -6,19 +6,27 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido.' });
   }
 
-  const supaUrl = process.env.SUPABASE_URL;
-  const supaKey = process.env.SUPABASE_ANON_KEY;
+  const limpar = (v) => String(v || '').trim().replace(/^["']|["']$/g, '');
+  let supaUrl = limpar(process.env.SUPABASE_URL);
+  const supaKey = limpar(process.env.SUPABASE_ANON_KEY);
+  try {
+    supaUrl = supaUrl ? new URL(supaUrl).origin : '';
+  } catch {
+    return res.status(500).json({ error: 'SUPABASE_URL está inválida nas variáveis do servidor.' });
+  }
   if (supaUrl && supaKey) {
     const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     if (!token) {
       return res.status(401).json({ error: 'Faça login para gerar o plano.' });
     }
     try {
-      const auth = await fetch(`${supaUrl.replace(/\/$/, '')}/auth/v1/user`, {
+      const auth = await fetch(`${supaUrl}/auth/v1/user`, {
         headers: { Authorization: `Bearer ${token}`, apikey: supaKey }
       });
       if (!auth.ok) {
-        return res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+        const detalhe = await auth.text().catch(() => '');
+        console.error('Falha ao validar login no Supabase:', auth.status, detalhe.slice(0, 300));
+        return res.status(401).json({ error: `Sessão inválida ou expirada. Entre novamente. (Supabase ${auth.status})` });
       }
     } catch {
       return res.status(502).json({ error: 'Não foi possível validar o seu login.' });
@@ -101,7 +109,8 @@ ENTREGUE NESTA ORDEM
 ## Sinais de alerta e aviso final`;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const modelo = limpar(process.env.GEMINI_MODEL) || 'gemini-3.8-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 55000);
 
