@@ -107,26 +107,26 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
       </form>
     </div>
     <div id="instalar" class="card p-5 mt-4">
-  <h2 class="font-bold text-white">📲 Instale o app no celular</h2>
-  <p class="text-xs text-gray-400 mt-1">Ele fica na tela inicial como um aplicativo e abre em tela cheia.</p>
-  <div class="flex gap-1 bg-ink border border-line rounded-2xl p-1 mt-4">
-    <button type="button" id="inst-b-ios" class="tab flex-1" aria-selected="true">iPhone</button>
-    <button type="button" id="inst-b-and" class="tab flex-1" aria-selected="false">Android</button>
-  </div>
-  <ol id="inst-ios" class="list-decimal pl-5 mt-4 space-y-2 text-sm text-gray-300">
-    <li>Abra este endereço no <strong class="text-white">Safari</strong> (não funciona em outros navegadores).</li>
-    <li>Toque no botão <strong class="text-white">Compartilhar</strong> (quadrado com uma seta para cima).</li>
-    <li>Role e toque em <strong class="text-white">Adicionar à Tela de Início</strong>.</li>
-    <li>Toque em <strong class="text-white">Adicionar</strong>. O ícone do Tirze Forte aparece na tela.</li>
-  </ol>
-  <ol id="inst-and" class="hidden list-decimal pl-5 mt-4 space-y-2 text-sm text-gray-300">
-    <li>Abra este endereço no <strong class="text-white">Chrome</strong>.</li>
-    <li>Toque no menu <strong class="text-white">⋮</strong> (três pontinhos, no canto superior).</li>
-    <li>Toque em <strong class="text-white">Instalar app</strong> ou <strong class="text-white">Adicionar à tela inicial</strong>.</li>
-    <li>Confirme em <strong class="text-white">Instalar</strong>.</li>
-  </ol>
-  <button type="button" id="inst-agora" class="hidden w-full mt-4 bg-iris hover:bg-violet-300 text-ink font-bold rounded-xl px-5 py-3 transition">Instalar agora</button>
-</div>
+      <h2 class="font-bold text-white">📲 Instale o app no celular</h2>
+      <p class="text-xs text-gray-400 mt-1">Ele fica na tela inicial como um aplicativo e abre em tela cheia.</p>
+      <div class="flex gap-1 bg-ink border border-line rounded-2xl p-1 mt-4">
+        <button type="button" id="inst-b-ios" class="tab flex-1" aria-selected="true">iPhone</button>
+        <button type="button" id="inst-b-and" class="tab flex-1" aria-selected="false">Android</button>
+      </div>
+      <ol id="inst-ios" class="list-decimal pl-5 mt-4 space-y-2 text-sm text-gray-300">
+        <li>Abra este endereço no <strong class="text-white">Safari</strong> (não funciona em outros navegadores).</li>
+        <li>Toque no botão <strong class="text-white">Compartilhar</strong> (quadrado com uma seta para cima).</li>
+        <li>Role e toque em <strong class="text-white">Adicionar à Tela de Início</strong>.</li>
+        <li>Toque em <strong class="text-white">Adicionar</strong>. O ícone do Tirze Forte aparece na tela.</li>
+      </ol>
+      <ol id="inst-and" class="hidden list-decimal pl-5 mt-4 space-y-2 text-sm text-gray-300">
+        <li>Abra este endereço no <strong class="text-white">Chrome</strong>.</li>
+        <li>Toque no menu <strong class="text-white">⋮</strong> (três pontinhos, no canto superior).</li>
+        <li>Toque em <strong class="text-white">Instalar app</strong> ou <strong class="text-white">Adicionar à tela inicial</strong>.</li>
+        <li>Confirme em <strong class="text-white">Instalar</strong>.</li>
+      </ol>
+      <button type="button" id="inst-agora" class="hidden w-full mt-4 bg-iris hover:bg-violet-300 text-ink font-bold rounded-xl px-5 py-3 transition">Instalar agora</button>
+    </div>
     <p class="text-xs text-gray-600 text-center mt-4">Conteúdo educativo. Não substitui médico ou nutricionista.</p>
   </div>
 </section>
@@ -666,10 +666,26 @@ function markdown(t) {
   return out.join('');
 }
 
+const DIAS_PLANO = 30;
+function planoVigente() {
+  const h = historico.find((x) => x.plano);
+  if (!h) return null;
+  const fim = new Date(h.criado_em).getTime() + DIAS_PLANO * 86400000;
+  if (Date.now() >= fim) return null;
+  return { ...h, restam: Math.ceil((fim - Date.now()) / 86400000) };
+}
+function mostrarPlano(h) {
+  ultimoTexto = h.plano;
+  $('resultado').innerHTML = markdown(h.plano);
+  const d = new Date(h.criado_em).toLocaleDateString('pt-BR');
+  $('plano-info').textContent = `Plano gerado em ${d}. Vale por 30 dias. Um novo plano, ajustado ao seu peso, é liberado em ${h.restam} dia(s).`;
+  $('resultado-box').classList.remove('hidden');
+}
+const rotuloBotao = () => planoVigente() ? 'Atualizar minhas metas (seu plano segue valendo)' : historico.some((x) => x.plano) ? 'Gerar meu plano do novo mês' : 'Calcular metas e gerar meu plano';
 function carregar(on) {
   $('btn-gerar').disabled = on;
   $('spin').classList.toggle('hidden', !on);
-  $('btn-txt').textContent = on ? 'Montando seu plano, pode levar alguns segundos...' : 'Calcular metas e gerar meu plano';
+  $('btn-txt').textContent = on ? 'Montando seu plano, pode levar alguns segundos...' : rotuloBotao();
 }
 
 function erro(msg) {
@@ -707,6 +723,13 @@ $('form').addEventListener('submit', async (e) => {
   registrarPeso(p.peso);
   renderMetas();
   renderHoje();
+  const vig = planoVigente();
+  if (vig) {
+    mostrarPlano(vig);
+    aviso('Metas atualizadas. Seu plano atual continua valendo por mais ' + vig.restam + ' dia(s).');
+    return;
+  }
+  const anterior = historico.find((x) => x.plano);
   carregar(true);
   $('resultado-box').classList.add('hidden');
   let plano = null;
@@ -716,7 +739,7 @@ $('form').addEventListener('submit', async (e) => {
     const r = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ perfil: p, metas })
+      body: JSON.stringify({ perfil: p, metas, anterior: anterior ? { peso: Number(anterior.peso), data: anterior.criado_em } : null })
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok || !data.result) throw new Error(data.error || 'Não foi possível gerar o plano agora.');
@@ -730,6 +753,8 @@ $('form').addEventListener('submit', async (e) => {
   } finally {
     carregar(false);
     await salvarHistorico(plano);
+    const novo = planoVigente();
+    if (novo) { mostrarPlano(novo); $('btn-txt').textContent = rotuloBotao(); }
   }
 });
 
@@ -1009,6 +1034,9 @@ async function entrar() {
   mesSel = isoLocal().slice(0, 7);
   aplicarPerfil();
   renderMetas();
+  const vig = planoVigente();
+  if (vig) mostrarPlano(vig);
+  carregar(false);
   trocarAba(metas ? 'hoje' : 'plano');
 }
 
@@ -1024,6 +1052,7 @@ function sair() {
   $('metas-box').classList.add('hidden');
   $('resultado-box').classList.add('hidden');
   erro('');
+  carregar(false);
   if (grafico) { grafico.destroy(); grafico = null; }
   mostrarAuth();
 }
@@ -1035,6 +1064,23 @@ function sessaoMudou(session) {
 }
 
 $('btn-sair').addEventListener('click', () => { if (sb) sb.auth.signOut(); });
+
+(function () {
+  const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (jaInstalado) { $('instalar').classList.add('hidden'); return; }
+  const modo = (ios) => {
+    $('inst-ios').classList.toggle('hidden', !ios);
+    $('inst-and').classList.toggle('hidden', ios);
+    $('inst-b-ios').setAttribute('aria-selected', String(ios));
+    $('inst-b-and').setAttribute('aria-selected', String(!ios));
+  };
+  modo(/iphone|ipad|ipod/i.test(navigator.userAgent));
+  $('inst-b-ios').addEventListener('click', () => modo(true));
+  $('inst-b-and').addEventListener('click', () => modo(false));
+  let adiado = null;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); adiado = e; $('inst-agora').classList.remove('hidden'); });
+  $('inst-agora').addEventListener('click', async () => { if (!adiado) return; adiado.prompt(); await adiado.userChoice; adiado = null; $('inst-agora').classList.add('hidden'); });
+})();
 
 if (!sb) {
   mostrarAuth();
