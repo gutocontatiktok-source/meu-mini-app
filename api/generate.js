@@ -6,6 +6,25 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido.' });
   }
 
+  const supaUrl = process.env.SUPABASE_URL;
+  const supaKey = process.env.SUPABASE_ANON_KEY;
+  if (supaUrl && supaKey) {
+    const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    if (!token) {
+      return res.status(401).json({ error: 'Faça login para gerar o plano.' });
+    }
+    try {
+      const auth = await fetch(`${supaUrl.replace(/\/$/, '')}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${token}`, apikey: supaKey }
+      });
+      if (!auth.ok) {
+        return res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+      }
+    } catch {
+      return res.status(502).json({ error: 'Não foi possível validar o seu login.' });
+    }
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no servidor.' });
@@ -34,7 +53,7 @@ export default async function handler(req, res) {
 
   const txt = (v, max = 300) => String(v || 'não informado').replace(/[\r\n]+/g, ' ').slice(0, max);
 
-  const systemInstruction = `Você é um nutricionista clínico brasileiro, especialista em pacientes em uso de tirzepatida (Mounjaro/Monjaro). Seu foco é preservar massa magra durante a perda de peso, garantir proteína suficiente com apetite reduzido, evitar déficits agressivos, controlar efeitos gastrointestinais (náusea, constipação, refluxo, saciedade precoce) e manter hidratação.
+  const systemInstruction = `Você é o assistente de nutrição do aplicativo Tirze Forte, cujo slogan é "Suas metas diárias para o uso da tirzepatida". Atue como nutricionista clínico brasileiro, especialista em pacientes em uso de tirzepatida (Mounjaro/Monjaro), com tom motivador, claro e profissional. Seu foco é preservar massa magra durante a perda de peso, garantir proteína suficiente com apetite reduzido, evitar déficits agressivos, controlar efeitos gastrointestinais (náusea, constipação, refluxo, saciedade precoce) e manter hidratação.
 Regras obrigatórias:
 - Responda em português do Brasil, em Markdown simples (títulos com ##, listas com -, negrito com **).
 - Use somente alimentos comuns no Brasil e porções em medidas caseiras e gramas.
@@ -42,10 +61,12 @@ Regras obrigatórias:
 - Prefira refeições pequenas, densas em proteína, fracionadas e de fácil digestão; evite frituras e excesso de gordura, que pioram náuseas e refluxo.
 - Se faltar proteína por baixa ingestão, sugira whey protein, colágeno com cautela, ou outro suplemento proteico, com dose em gramas, e creatina monohidratada apenas se fizer sentido; nunca prescreva medicamentos nem altere a dose da tirzepatida.
 - Respeite restrições, alergias e preferências informadas.
+- Para a meta mensal de peso, sugira perda de 2% a 4% do peso inicial por mês (0,5% a 1% por semana), nunca mais que isso, e proponha também metas mensais de dias com proteína batida, dias com água batida, sessões de treino de força e dias registrados no app.
+- Finalize o texto, depois do aviso, com o slogan do Tirze Forte em uma linha.
 - Inclua orientação de treino de força 2 a 4 vezes por semana como pilar de preservação muscular.
 - Encerre com um aviso curto de que o plano é educativo e não substitui o acompanhamento do médico e do nutricionista, e liste sinais de alerta que exigem contato com o médico (vômitos persistentes, dor abdominal intensa, desidratação, tontura forte, perda de peso acima de 1% do peso corporal por semana).`;
 
-  const prompt = `Monte o plano diário completo para este paciente.
+  const prompt = `Monte o plano diário completo do Tirze Forte para este paciente.
 
 PERFIL
 - Sexo: ${txt(p.sexo, 20)}
@@ -76,10 +97,11 @@ ENTREGUE NESTA ORDEM
 ## Intestino e hidratação
 ## Treino de força
 ## Dicas para os dias de náusea ou saciedade extrema
+## Metas sugeridas para o primeiro mês (peso em kg com faixa mínima e máxima, dias com proteína batida, dias com água batida, treinos de força e dias registrados no app)
 ## Sinais de alerta e aviso final`;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 55000);
 
