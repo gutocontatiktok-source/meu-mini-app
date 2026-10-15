@@ -189,6 +189,13 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
           <option value="1.55" selected>Moderado, 3 a 5 treinos por semana</option>
           <option value="1.725">Alto, 6 a 7 treinos por semana</option>
         </select></div>
+      <div class="sm:col-span-2"><label class="f" for="nref">Quantas refeições você consegue fazer por dia?</label>
+        <select id="nref" required>
+          <option value="4" selected>4 refeições (café, almoço, lanche e jantar)</option>
+          <option value="5">5 refeições (com lanche da manhã)</option>
+          <option value="6">6 refeições (com ceia proteica)</option>
+        </select>
+        <p class="text-xs text-gray-500 mt-1.5">Escolha o que cabe na sua rotina com pouco apetite. O cardápio e o check-up diário seguem esse número.</p></div>
       <div><label class="f" for="dose">Dose atual</label>
         <select id="dose"><option>2,5 mg</option><option>5 mg</option><option>7,5 mg</option><option>10 mg</option><option>12,5 mg</option><option>15 mg</option><option>Ainda não sei</option></select></div>
       <div><label class="f" for="tempoUso">Tempo de uso</label>
@@ -331,7 +338,12 @@ let grafico = null;
 let perfilTimer;
 let avisoTimer;
 if (window.Chart) { Chart.defaults.color = '#9ca3af'; Chart.defaults.font.family = 'Manrope, system-ui, sans-serif'; }
-const REFEICOES = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia proteica'];
+const REFEICOES_POR_QTD = {
+  4: ['Café da manhã', 'Almoço', 'Lanche da tarde', 'Jantar'],
+  5: ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar'],
+  6: ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia proteica']
+};
+const nomesRef = (n) => REFEICOES_POR_QTD[n] || REFEICOES_POR_QTD[6];
 const OUTRAS = [
   ['fibras', 'Comi fibras suficientes (frutas, aveia, feijão, verduras)'],
   ['intestino', 'Meu intestino funcionou hoje'],
@@ -387,7 +399,7 @@ function calcular(p) {
     deficitPct: Math.round(((get - kcal) / get) * 100),
     proteina: Math.round(ref * 1.8), protMin: Math.round(ref * 1.6), protMax: Math.round(ref * 2.0),
     agua: Math.ceil((p.peso * 35) / 250), fibras: p.sexo === 'masculino' ? 30 : 25,
-    imc: Math.round(imc * 10) / 10, refPeso: Math.round(ref)
+    imc: Math.round(imc * 10) / 10, refPeso: Math.round(ref), refeicoes: p.refeicoes
   };
 }
 
@@ -401,13 +413,13 @@ function trocarAba(nome) {
 document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.tab)));
 document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.go)));
 
-function salvarDia() { dia.m = { proteina: metas.proteina, agua: metas.agua, kcal: metas.kcal }; store.set(hojeKey(), dia); renderHoje(); }
+function salvarDia() { dia.m = { proteina: metas.proteina, agua: metas.agua, kcal: metas.kcal, refeicoes: metas.refeicoes }; store.set(hojeKey(), dia); renderHoje(); }
 
 function renderMetas() {
   if (!metas) return;
   const itens = [
     ['TMB', metas.tmb + ' kcal'], ['GET', metas.get + ' kcal'], ['Meta calórica', metas.kcal + ' kcal'],
-    ['Proteína', metas.proteina + ' g'], ['Água', metas.agua + ' copos'], ['Fibras', metas.fibras + ' g']
+    ['Proteína', metas.proteina + ' g'], ['Água', metas.agua + ' copos'], ['Fibras', metas.fibras + ' g'], ['Refeições', (metas.refeicoes || 6) + ' por dia']
   ];
   $('metas-grid').innerHTML = itens.map(([k, v]) =>
     `<div class="rounded-2xl border border-line bg-ink p-4"><p class="text-xs text-gray-400">${k}</p><p class="font-display text-xl font-bold text-white mt-1">${v}</p></div>`
@@ -419,7 +431,7 @@ function renderMetas() {
 function calcScore(d, m) {
   const r = (v, t) => Math.min(1, v / t);
   const kcalOk = d.kcal > 0 && d.kcal >= m.kcal * 0.9 && d.kcal <= m.kcal * 1.05 ? 1 : 0;
-  const pontos = r(d.agua, m.agua) + r(d.prot, m.proteina) + kcalOk + d.ref.length / REFEICOES.length + d.out.length / OUTRAS.length;
+  const pontos = r(d.agua, m.agua) + r(d.prot, m.proteina) + kcalOk + Math.min(1, d.ref.length / (m.refeicoes || 6)) + d.out.length / OUTRAS.length;
   return Math.round((pontos / 5) * 100);
 }
 
@@ -442,7 +454,7 @@ function renderHoje() {
   $('copos').innerHTML = Array.from({ length: metas.agua }, (_, i) =>
     `<button type="button" class="cup" data-on="${i < dia.agua ? 1 : 0}" data-i="${i}" aria-label="Copo ${i + 1}" aria-pressed="${i < dia.agua}"></button>`
   ).join('');
-  $('refeicoes').innerHTML = REFEICOES.map((n, i) =>
+  $('refeicoes').innerHTML = nomesRef(metas.refeicoes).map((n, i) =>
     `<label class="chk"><input type="checkbox" data-r="${i}" ${dia.ref.includes(i) ? 'checked' : ''}><span class="text-sm">${n}</span></label>`
   ).join('');
   $('outras').innerHTML = OUTRAS.map(([k, n]) =>
@@ -528,6 +540,7 @@ function aplicarPerfil() {
   if (!perfil) return;
   ['sexo', 'idade', 'peso', 'altura', 'dose', 'tempoUso', 'sintomas', 'restricoes', 'preferencias'].forEach((k) => { if (perfil[k] !== undefined) $(k).value = perfil[k]; });
   $('atividade').value = String(perfil.fator);
+  $('nref').value = String(perfil.refeicoes || 4);
   $('suplementos').checked = !!perfil.suplementos;
   renderMetas();
 }
@@ -537,7 +550,7 @@ $('form').addEventListener('submit', async (e) => {
   erro('');
   const p = {
     sexo: $('sexo').value, idade: Number($('idade').value), peso: Number($('peso').value), altura: Number($('altura').value),
-    fator: Number($('atividade').value), atividadeLabel: $('atividade').selectedOptions[0].textContent,
+    refeicoes: Number($('nref').value), fator: Number($('atividade').value), atividadeLabel: $('atividade').selectedOptions[0].textContent,
     dose: $('dose').value, tempoUso: $('tempoUso').value, sintomas: $('sintomas').value,
     restricoes: $('restricoes').value.trim(), preferencias: $('preferencias').value.trim(), suplementos: $('suplementos').checked
   };
