@@ -1,88 +1,463 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Treino & Dieta Express</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meta Diária Tirzepatida</title>
+<meta name="theme-color" content="#090d16">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { display: ['Fraunces', 'Georgia', 'serif'], sans: ['Manrope', 'system-ui', 'sans-serif'] },
+      colors: { ink: '#090d16', panel: '#111827', line: '#1f2937', iris: '#a78bfa', amber2: '#fbbf24', sky2: '#7dd3fc', rose2: '#fda4af' }
+    }
+  }
+}
+</script>
+<style>
+html { scroll-behavior: smooth; }
+body { background: #090d16; color: #e5e7eb; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+input, select, textarea { background: #0b1220; border: 1px solid #1f2937; border-radius: .75rem; padding: .7rem .9rem; width: 100%; color: #f3f4f6; font-size: 16px; }
+input:focus, select:focus, textarea:focus { outline: 2px solid #a78bfa; outline-offset: 1px; border-color: transparent; }
+label.f { display: block; font-size: .8rem; font-weight: 600; color: #9ca3af; margin-bottom: .35rem; }
+.tab { padding: .6rem 1rem; border-radius: .75rem; font-weight: 600; font-size: .9rem; color: #9ca3af; transition: background .15s, color .15s; }
+.tab:hover { color: #fff; }
+.tab[aria-selected="true"] { background: #a78bfa; color: #0b0720; }
+.tab:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
+.card { background: #111827; border: 1px solid #1f2937; border-radius: 1.25rem; }
+.bar { height: .6rem; background: #1f2937; border-radius: 999px; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 999px; transition: width .35s ease; }
+.chk { display: flex; align-items: center; gap: .75rem; padding: .8rem 1rem; border: 1px solid #1f2937; border-radius: .9rem; cursor: pointer; transition: border-color .15s, background .15s; }
+.chk:hover { border-color: #4b5563; }
+.chk input { width: 1.25rem; height: 1.25rem; accent-color: #a78bfa; padding: 0; flex: none; }
+.chk:has(input:checked) { background: rgba(167,139,250,.1); border-color: rgba(167,139,250,.5); }
+.cup { width: 2.25rem; height: 2.75rem; border-radius: .4rem .4rem .8rem .8rem; border: 1.5px solid #374151; transition: background .15s, border-color .15s; }
+.cup[data-on="1"] { background: rgba(125,211,252,.35); border-color: #7dd3fc; }
+.cup:hover { border-color: #7dd3fc; }
+.prose-out h2 { font-family: Fraunces, serif; font-size: 1.25rem; font-weight: 700; color: #fff; margin: 1.6rem 0 .6rem; }
+.prose-out h2:first-child { margin-top: 0; }
+.prose-out h3 { font-weight: 700; color: #fff; margin: 1rem 0 .4rem; }
+.prose-out p { margin: .5rem 0; line-height: 1.7; color: #d1d5db; }
+.prose-out ul { margin: .5rem 0; padding-left: 1.2rem; list-style: disc; color: #d1d5db; }
+.prose-out li { margin: .3rem 0; line-height: 1.6; }
+.prose-out strong { color: #fff; }
+details.g summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 1rem; align-items: center; font-weight: 700; color: #fff; }
+details.g summary::-webkit-details-marker { display: none; }
+details.g summary::after { content: '+'; color: #a78bfa; font-size: 1.4rem; line-height: 1; transition: transform .2s; }
+details.g[open] summary::after { transform: rotate(45deg); }
+details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+<body class="font-sans antialiased min-h-screen">
 
-  <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
-    <h1 class="text-2xl font-bold text-emerald-400 text-center mb-2">Treino & Dieta Express</h1>
-    <p class="text-slate-400 text-sm text-center mb-6">Gere uma rotina personalizada com Inteligência Artificial.</p>
+<header class="sticky top-0 z-20 border-b border-line bg-ink/90 backdrop-blur" style="padding-top: env(safe-area-inset-top, 0px)">
+  <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <div>
+      <h1 class="font-display text-xl font-bold text-white leading-tight">Meta Diária</h1>
+      <p class="text-xs text-gray-400">Proteção de massa magra na tirzepatida</p>
+    </div>
+    <nav class="flex gap-1 bg-panel border border-line rounded-2xl p-1" role="tablist" aria-label="Seções">
+      <button class="tab" role="tab" data-tab="hoje" aria-selected="true">Hoje</button>
+      <button class="tab" role="tab" data-tab="plano" aria-selected="false">Meu plano</button>
+      <button class="tab" role="tab" data-tab="guia" aria-selected="false">Guia</button>
+    </nav>
+  </div>
+</header>
 
-    <form id="app-form" class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Idade</label>
-          <input type="number" id="age" required placeholder="Ex: 28" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500 text-white">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Peso (kg)</label>
-          <input type="number" id="weight" required placeholder="Ex: 75" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500 text-white">
-        </div>
-      </div>
+<main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
 
-      <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Objetivo Principal</label>
-        <select id="goal" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500 text-white">
-          <option value="Perda de gordura e definição">Perda de Gordura</option>
-          <option value="Ganho de massa muscular (Hipertrofia)">Ganho de Massa (Hipertrofia)</option>
-          <option value="Recomposição corporal e condicionamento">Recomposição Corporal</option>
-        </select>
-      </div>
-
-      <button type="submit" id="btn-submit" class="w-full bg-emerald-500 hover:bg-emerald-600 font-semibold py-3 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/20">
-        Gerar Meu Plano Agora
-      </button>
-    </form>
-
-    <div id="output" class="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700 hidden text-sm leading-relaxed text-slate-300 whitespace-pre-wrap"></div>
+<section id="tab-hoje" role="tabpanel" class="space-y-5">
+  <div id="hoje-vazio" class="card p-6 text-center hidden">
+    <h2 class="font-display text-2xl font-bold text-white">Calcule suas metas primeiro</h2>
+    <p class="text-gray-400 mt-2">Preencha seus dados em Meu plano para liberar o check-up diário com suas metas de calorias, proteína e água.</p>
+    <button data-go="plano" class="mt-5 bg-iris hover:bg-violet-300 text-ink font-bold rounded-xl px-5 py-3 transition">Calcular minhas metas</button>
   </div>
 
-  <script>
-    document.getElementById('app-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const age = document.getElementById('age').value;
-      const weight = document.getElementById('weight').value;
-      const goal = document.getElementById('goal').value;
-      
-      const outputDiv = document.getElementById('output');
-      const btnSubmit = document.getElementById('btn-submit');
-      
-      btnSubmit.innerText = 'Processando com IA...';
-      btnSubmit.disabled = true;
-      outputDiv.classList.add('hidden');
+  <div id="hoje-app" class="space-y-5 hidden">
+    <div class="card p-5">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <p id="data-hoje" class="text-sm text-gray-400"></p>
+          <h2 class="font-display text-2xl font-bold text-white">Seu dia até agora</h2>
+        </div>
+        <p class="font-display text-4xl font-bold text-iris"><span id="score">0</span>%</p>
+      </div>
+      <div class="bar mt-4"><i id="score-bar" class="bg-iris" style="width:0%"></i></div>
+      <p id="score-msg" class="text-sm text-gray-400 mt-3"></p>
+    </div>
 
-      try {
-        const response = await fetch('/api/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ age, weight, goal })
-        });
+    <div class="card p-5">
+      <div class="flex justify-between items-baseline">
+        <h3 class="font-bold text-white">Proteína</h3>
+        <p class="text-sm text-gray-400"><span id="prot-val" class="text-white font-bold">0</span> / <span id="prot-meta"></span> g</p>
+      </div>
+      <div class="bar mt-3"><i id="prot-bar" class="bg-amber2" style="width:0%"></i></div>
+      <div class="flex gap-2 mt-4">
+        <input id="prot-add" type="number" inputmode="decimal" min="0" placeholder="Gramas da refeição" aria-label="Gramas de proteína">
+        <button id="prot-btn" class="shrink-0 bg-amber2 hover:bg-yellow-300 text-ink font-bold rounded-xl px-5 transition">Somar</button>
+      </div>
+      <p id="prot-hint" class="text-xs text-gray-500 mt-3"></p>
+    </div>
 
-        const data = await response.json();
+    <div class="card p-5">
+      <div class="flex justify-between items-baseline">
+        <h3 class="font-bold text-white">Calorias</h3>
+        <p class="text-sm text-gray-400"><span id="kcal-val" class="text-white font-bold">0</span> / <span id="kcal-meta"></span> kcal</p>
+      </div>
+      <div class="bar mt-3"><i id="kcal-bar" class="bg-rose2" style="width:0%"></i></div>
+      <div class="flex gap-2 mt-4">
+        <input id="kcal-add" type="number" inputmode="decimal" min="0" placeholder="Kcal da refeição" aria-label="Calorias da refeição">
+        <button id="kcal-btn" class="shrink-0 bg-rose2 hover:bg-rose-300 text-ink font-bold rounded-xl px-5 transition">Somar</button>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">Meta já inclui o déficit controlado. Comer muito abaixo dela também é um problema na tirzepatida.</p>
+    </div>
 
-        if (response.ok && data.result) {
-          outputDiv.innerText = data.result;
-          outputDiv.classList.remove('hidden');
-        } else {
-          outputDiv.innerText = 'Erro: ' + (data.error || 'Falha ao processar a requisição.');
-          outputDiv.classList.remove('hidden');
-        }
-      } catch (err) {
-        outputDiv.innerText = 'Erro de conexão: ' + err.message;
-        outputDiv.classList.remove('hidden');
-      } finally {
-        btnSubmit.innerText = 'Gerar Meu Plano Agora';
-        btnSubmit.disabled = false;
-      }
+    <div class="card p-5">
+      <div class="flex justify-between items-baseline">
+        <h3 class="font-bold text-white">Água</h3>
+        <p class="text-sm text-gray-400"><span id="agua-val" class="text-white font-bold">0</span> / <span id="agua-meta"></span> copos de 250 ml</p>
+      </div>
+      <div id="copos" class="flex flex-wrap gap-2 mt-4"></div>
+    </div>
+
+    <div class="card p-5 space-y-2">
+      <h3 class="font-bold text-white mb-1">Refeições feitas</h3>
+      <div id="refeicoes" class="grid sm:grid-cols-2 gap-2"></div>
+    </div>
+
+    <div class="card p-5 space-y-2">
+      <h3 class="font-bold text-white mb-1">Outras metas</h3>
+      <div id="outras" class="grid gap-2"></div>
+    </div>
+
+    <button id="reset-dia" class="text-sm text-gray-500 hover:text-gray-300 underline underline-offset-4 transition">Zerar o dia de hoje</button>
+  </div>
+</section>
+
+<section id="tab-plano" role="tabpanel" class="space-y-5 hidden">
+  <div class="card p-5 sm:p-6">
+    <h2 class="font-display text-2xl font-bold text-white">Seus dados</h2>
+    <p class="text-gray-400 text-sm mt-1">Calculamos TMB, GET e um déficit controlado, e a IA monta o plano completo.</p>
+
+    <form id="form" class="mt-5 grid sm:grid-cols-2 gap-4" novalidate>
+      <div><label class="f" for="sexo">Sexo</label>
+        <select id="sexo" required><option value="feminino">Feminino</option><option value="masculino">Masculino</option></select></div>
+      <div><label class="f" for="idade">Idade</label><input id="idade" type="number" inputmode="numeric" min="18" max="90" placeholder="Ex.: 38" required></div>
+      <div><label class="f" for="peso">Peso atual (kg)</label><input id="peso" type="number" inputmode="decimal" min="35" max="300" step="0.1" placeholder="Ex.: 92.5" required></div>
+      <div><label class="f" for="altura">Altura (cm)</label><input id="altura" type="number" inputmode="numeric" min="120" max="220" placeholder="Ex.: 165" required></div>
+      <div class="sm:col-span-2"><label class="f" for="atividade">Nível de atividade</label>
+        <select id="atividade" required>
+          <option value="1.2">Sedentário, sem exercício</option>
+          <option value="1.375">Leve, 1 a 3 treinos por semana</option>
+          <option value="1.55" selected>Moderado, 3 a 5 treinos por semana</option>
+          <option value="1.725">Alto, 6 a 7 treinos por semana</option>
+        </select></div>
+      <div><label class="f" for="dose">Dose atual</label>
+        <select id="dose"><option>2,5 mg</option><option>5 mg</option><option>7,5 mg</option><option>10 mg</option><option>12,5 mg</option><option>15 mg</option><option>Ainda não sei</option></select></div>
+      <div><label class="f" for="tempoUso">Tempo de uso</label>
+        <select id="tempoUso"><option>Ainda vou começar</option><option>Menos de 1 mês</option><option>1 a 3 meses</option><option>3 a 6 meses</option><option>Mais de 6 meses</option></select></div>
+      <div class="sm:col-span-2"><label class="f" for="sintomas">Maior dificuldade hoje</label>
+        <select id="sintomas"><option>Pouco apetite</option><option>Náusea</option><option>Prisão de ventre</option><option>Diarreia</option><option>Refluxo</option><option>Cansaço e fraqueza</option><option>Nenhuma</option></select></div>
+      <div class="sm:col-span-2"><label class="f" for="restricoes">Alergias e restrições</label><input id="restricoes" type="text" maxlength="200" placeholder="Ex.: intolerância à lactose, não como carne vermelha"></div>
+      <div class="sm:col-span-2"><label class="f" for="preferencias">Alimentos que gosta ou evita</label><input id="preferencias" type="text" maxlength="200" placeholder="Ex.: gosto de ovo e frango, não suporto peixe"></div>
+      <label class="chk sm:col-span-2"><input id="suplementos" type="checkbox" checked><span class="text-sm">Aceito usar suplementos (whey, creatina) para bater a proteína</span></label>
+
+      <p id="erro-form" class="sm:col-span-2 text-sm text-rose2 hidden" role="alert"></p>
+      <button id="btn-gerar" type="submit" class="sm:col-span-2 flex items-center justify-center gap-3 bg-iris hover:bg-violet-300 disabled:opacity-60 disabled:cursor-not-allowed text-ink font-bold rounded-xl px-5 py-3.5 transition">
+        <svg id="spin" class="hidden animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+        <span id="btn-txt">Calcular metas e gerar meu plano</span>
+      </button>
+    </form>
+  </div>
+
+  <div id="metas-box" class="card p-5 sm:p-6 hidden">
+    <h2 class="font-display text-2xl font-bold text-white">Suas metas diárias</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4" id="metas-grid"></div>
+    <p id="metas-nota" class="text-xs text-gray-500 mt-4 leading-relaxed"></p>
+  </div>
+
+  <div id="resultado-box" class="card p-5 sm:p-6 hidden">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <h2 class="font-display text-2xl font-bold text-white">Seu plano</h2>
+      <button id="btn-copiar" class="border border-line hover:border-iris text-sm font-semibold rounded-xl px-4 py-2 transition">Copiar resultado</button>
+    </div>
+    <div id="resultado" class="prose-out"></div>
+  </div>
+</section>
+
+<section id="tab-guia" role="tabpanel" class="space-y-3 hidden">
+  <div class="mb-2">
+    <h2 class="font-display text-2xl font-bold text-white">O que comer e por quê</h2>
+    <p class="text-gray-400 text-sm mt-1">A tirzepatida reduz o apetite. Sem estratégia, o corpo perde músculo junto com a gordura.</p>
+  </div>
+
+  <details class="g card p-5" open><summary>Por que a proteína vem em primeiro lugar</summary>
+    <div class="mt-3 space-y-2"><p>Com pouco apetite e déficit calórico, o corpo pode usar músculo como fonte de energia. Proteína suficiente somada a treino de força é o que protege a massa magra, mantém o metabolismo mais alto e evita o efeito sanfona.</p>
+    <p>Referência usada no app: cerca de 1,6 a 2,0 g por kg de peso de referência, distribuída em 4 a 6 refeições com 20 a 35 g cada.</p></div></details>
+
+  <details class="g card p-5"><summary>Fontes de proteína que cabem em pouco volume</summary>
+    <ul class="mt-3 list-disc pl-5"><li>Ovos, claras e omelete</li><li>Frango, peixe, atum e sardinha em lata</li><li>Iogurte grego, skyr, queijo cottage e ricota</li><li>Carne moída magra e patinho</li><li>Tofu, grão-de-bico e lentilha</li><li>Whey protein em shake, vitamina ou misturado em iogurte</li></ul>
+    <p class="mt-2">Dica: comece a refeição pela proteína. Se a saciedade chegar cedo, o prato mais importante já foi comido.</p></details>
+
+  <details class="g card p-5"><summary>Intestino: como evitar prisão de ventre</summary>
+    <ul class="mt-3 list-disc pl-5"><li>Meta de fibras de 25 a 30 g por dia, aumentando aos poucos</li><li>Mamão, ameixa, kiwi, aveia, chia, linhaça e feijões</li><li>Água ao longo do dia, junto com as fibras</li><li>Caminhada leve depois das refeições</li><li>Converse com o médico antes de usar laxantes ou fibras em pó</li></ul></details>
+
+  <details class="g card p-5"><summary>Hidratação</summary>
+    <p class="mt-3">Referência de 35 ml por kg de peso. Beba aos goles, com mais frequência, porque grandes volumes de uma vez podem causar enjoo. Chás sem açúcar e água de coco contam. Urina escura, tontura e boca seca são sinais de desidratação.</p></details>
+
+  <details class="g card p-5"><summary>Treino de força é parte do tratamento</summary>
+    <p class="mt-3">Faça de 2 a 4 treinos de força por semana, trabalhando os grandes grupos musculares: pernas, costas, peito e ombros. Aumente a carga com o tempo. É o estímulo que diz ao corpo para manter o músculo.</p></details>
+
+  <details class="g card p-5"><summary>Náusea, refluxo e saciedade precoce</summary>
+    <ul class="mt-3 list-disc pl-5"><li>Porções pequenas e mais vezes ao dia</li><li>Evite frituras, molhos gordurosos e doces muito concentrados</li><li>Prefira alimentos mornos ou frios, que cheiram menos</li><li>Não deite logo depois de comer</li><li>Shakes de proteína ajudam quando comer sólido pesa</li></ul></details>
+
+  <details class="g card p-5"><summary>Quando falar com o médico</summary>
+    <p class="mt-3">Vômitos que não passam, dor forte na barriga, sinais de desidratação, tontura intensa ou perda de peso muito rápida, acima de 1% do peso por semana. Este app é educativo e não substitui o acompanhamento médico e nutricional.</p></details>
+</section>
+
+</main>
+
+<footer class="max-w-3xl mx-auto px-4 pb-10 text-xs text-gray-600">
+  Conteúdo educativo. Não substitui consulta com médico ou nutricionista. Nunca altere a dose da medicação por conta própria.
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const REFEICOES = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia proteica'];
+const OUTRAS = [
+  ['fibras', 'Comi fibras suficientes (frutas, aveia, feijão, verduras)'],
+  ['intestino', 'Meu intestino funcionou hoje'],
+  ['treino', 'Fiz treino de força ou caminhada'],
+  ['suplemento', 'Tomei o suplemento proteico planejado'],
+  ['sono', 'Dormi bem (7 horas ou mais)']
+];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const hojeKey = () => 'tz_dia_' + new Date().toISOString().slice(0, 10);
+let metas = store.get('tz_metas', null);
+let perfil = store.get('tz_perfil', null);
+let dia = store.get(hojeKey(), { agua: 0, prot: 0, kcal: 0, ref: [], out: [] });
+let ultimoTexto = '';
+
+function calcular(p) {
+  const tmb = 10 * p.peso + 6.25 * p.altura - 5 * p.idade + (p.sexo === 'masculino' ? 5 : -161);
+  const get = tmb * p.fator;
+  const m = p.altura / 100;
+  const imc = p.peso / (m * m);
+  const ideal = 22 * m * m;
+  const ref = imc >= 30 ? ideal + 0.25 * (p.peso - ideal) : p.peso;
+  const piso = p.sexo === 'masculino' ? 1500 : 1200;
+  const deficit = Math.min(get * 0.2, 750);
+  const kcal = Math.max(get - deficit, piso);
+  return {
+    tmb: Math.round(tmb), get: Math.round(get), kcal: Math.round(kcal),
+    deficitPct: Math.round(((get - kcal) / get) * 100),
+    proteina: Math.round(ref * 1.8), protMin: Math.round(ref * 1.6), protMax: Math.round(ref * 2.0),
+    agua: Math.ceil((p.peso * 35) / 250), fibras: p.sexo === 'masculino' ? 30 : 25,
+    imc: Math.round(imc * 10) / 10, refPeso: Math.round(ref)
+  };
+}
+
+function trocarAba(nome) {
+  ['hoje', 'plano', 'guia'].forEach((n) => $('tab-' + n).classList.toggle('hidden', n !== nome));
+  document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === nome)));
+  if (nome === 'hoje') renderHoje();
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.tab)));
+document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => trocarAba(b.dataset.go)));
+
+function salvarDia() { store.set(hojeKey(), dia); renderHoje(); }
+
+function renderMetas() {
+  if (!metas) return;
+  const itens = [
+    ['TMB', metas.tmb + ' kcal'], ['GET', metas.get + ' kcal'], ['Meta calórica', metas.kcal + ' kcal'],
+    ['Proteína', metas.proteina + ' g'], ['Água', metas.agua + ' copos'], ['Fibras', metas.fibras + ' g']
+  ];
+  $('metas-grid').innerHTML = itens.map(([k, v]) =>
+    `<div class="rounded-2xl border border-line bg-ink p-4"><p class="text-xs text-gray-400">${k}</p><p class="font-display text-xl font-bold text-white mt-1">${v}</p></div>`
+  ).join('');
+  $('metas-nota').textContent = `Déficit controlado de ${metas.deficitPct}% sobre o GET (Mifflin-St Jeor). Proteína entre ${metas.protMin} e ${metas.protMax} g, calculada sobre ${metas.refPeso} kg de peso de referência (IMC ${metas.imc}).`;
+  $('metas-box').classList.remove('hidden');
+}
+
+function renderHoje() {
+  $('hoje-vazio').classList.toggle('hidden', !!metas);
+  $('hoje-app').classList.toggle('hidden', !metas);
+  if (!metas) return;
+  $('data-hoje').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const pct = (v, m) => Math.min(100, Math.round((v / m) * 100));
+  $('prot-val').textContent = Math.round(dia.prot);
+  $('prot-meta').textContent = metas.proteina;
+  $('prot-bar').style.width = pct(dia.prot, metas.proteina) + '%';
+  const falta = Math.max(0, metas.proteina - dia.prot);
+  $('prot-hint').textContent = falta > 0 ? `Faltam ${Math.round(falta)} g. Se o apetite não ajudar, um shake de whey costuma entregar 20 a 25 g.` : 'Meta de proteína batida. Excelente para proteger seu músculo.';
+  $('kcal-val').textContent = Math.round(dia.kcal);
+  $('kcal-meta').textContent = metas.kcal;
+  $('kcal-bar').style.width = pct(dia.kcal, metas.kcal) + '%';
+  $('agua-val').textContent = dia.agua;
+  $('agua-meta').textContent = metas.agua;
+  $('copos').innerHTML = Array.from({ length: metas.agua }, (_, i) =>
+    `<button type="button" class="cup" data-on="${i < dia.agua ? 1 : 0}" data-i="${i}" aria-label="Copo ${i + 1}" aria-pressed="${i < dia.agua}"></button>`
+  ).join('');
+  $('refeicoes').innerHTML = REFEICOES.map((n, i) =>
+    `<label class="chk"><input type="checkbox" data-r="${i}" ${dia.ref.includes(i) ? 'checked' : ''}><span class="text-sm">${n}</span></label>`
+  ).join('');
+  $('outras').innerHTML = OUTRAS.map(([k, n]) =>
+    `<label class="chk"><input type="checkbox" data-o="${k}" ${dia.out.includes(k) ? 'checked' : ''}><span class="text-sm">${n}</span></label>`
+  ).join('');
+  const kcalOk = dia.kcal > 0 && dia.kcal >= metas.kcal * 0.9 && dia.kcal <= metas.kcal * 1.05 ? 1 : 0;
+  const pontos = pct(dia.agua, metas.agua) / 100 + pct(dia.prot, metas.proteina) / 100 + kcalOk + dia.ref.length / REFEICOES.length + dia.out.length / OUTRAS.length;
+  const score = Math.round((pontos / 5) * 100);
+  $('score').textContent = score;
+  $('score-bar').style.width = score + '%';
+  $('score-msg').textContent = score >= 90 ? 'Dia excelente. Constância é o que gera resultado.' : score >= 60 ? 'Bom ritmo. Ainda dá para fechar as metas que faltam.' : 'Comece pela proteína e pela água, são as metas de maior impacto.';
+}
+
+$('copos').addEventListener('click', (e) => {
+  const b = e.target.closest('.cup');
+  if (!b) return;
+  const n = Number(b.dataset.i) + 1;
+  dia.agua = dia.agua === n ? n - 1 : n;
+  salvarDia();
+});
+$('refeicoes').addEventListener('change', (e) => {
+  const i = Number(e.target.dataset.r);
+  dia.ref = e.target.checked ? [...new Set([...dia.ref, i])] : dia.ref.filter((x) => x !== i);
+  salvarDia();
+});
+$('outras').addEventListener('change', (e) => {
+  const k = e.target.dataset.o;
+  dia.out = e.target.checked ? [...new Set([...dia.out, k])] : dia.out.filter((x) => x !== k);
+  salvarDia();
+});
+function somar(campo, input) {
+  const v = parseFloat($(input).value);
+  if (!Number.isFinite(v) || v <= 0) return;
+  dia[campo] += v;
+  $(input).value = '';
+  salvarDia();
+}
+$('prot-btn').addEventListener('click', () => somar('prot', 'prot-add'));
+$('kcal-btn').addEventListener('click', () => somar('kcal', 'kcal-add'));
+['prot-add', 'kcal-add'].forEach((id) => $(id).addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); somar(id === 'prot-add' ? 'prot' : 'kcal', id); }
+}));
+$('reset-dia').addEventListener('click', () => {
+  if (!confirm('Zerar todos os registros de hoje?')) return;
+  dia = { agua: 0, prot: 0, kcal: 0, ref: [], out: [] };
+  salvarDia();
+});
+
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>'); }
+function markdown(t) {
+  const out = [];
+  let lista = false;
+  t.split('\n').forEach((raw) => {
+    const l = raw.trim();
+    const li = l.match(/^[-*•]\s+(.*)/);
+    if (li) {
+      if (!lista) { out.push('<ul>'); lista = true; }
+      out.push('<li>' + inline(li[1]) + '</li>');
+      return;
+    }
+    if (lista) { out.push('</ul>'); lista = false; }
+    if (!l) return;
+    const h = l.match(/^#{1,4}\s+(.*)/);
+    if (h) out.push(l.startsWith('###') ? '<h3>' + inline(h[1]) + '</h3>' : '<h2>' + inline(h[1]) + '</h2>');
+    else out.push('<p>' + inline(l) + '</p>');
+  });
+  if (lista) out.push('</ul>');
+  return out.join('');
+}
+
+function carregar(on) {
+  $('btn-gerar').disabled = on;
+  $('spin').classList.toggle('hidden', !on);
+  $('btn-txt').textContent = on ? 'Montando seu plano, pode levar alguns segundos...' : 'Calcular metas e gerar meu plano';
+}
+
+function erro(msg) {
+  const e = $('erro-form');
+  e.textContent = msg || '';
+  e.classList.toggle('hidden', !msg);
+}
+
+if (perfil) {
+  ['sexo', 'idade', 'peso', 'altura', 'dose', 'tempoUso', 'sintomas', 'restricoes', 'preferencias'].forEach((k) => { if (perfil[k] !== undefined) $(k).value = perfil[k]; });
+  $('atividade').value = String(perfil.fator);
+  $('suplementos').checked = !!perfil.suplementos;
+  renderMetas();
+}
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  erro('');
+  const p = {
+    sexo: $('sexo').value, idade: Number($('idade').value), peso: Number($('peso').value), altura: Number($('altura').value),
+    fator: Number($('atividade').value), atividadeLabel: $('atividade').selectedOptions[0].textContent,
+    dose: $('dose').value, tempoUso: $('tempoUso').value, sintomas: $('sintomas').value,
+    restricoes: $('restricoes').value.trim(), preferencias: $('preferencias').value.trim(), suplementos: $('suplementos').checked
+  };
+  if (!(p.idade >= 18 && p.idade <= 90) || !(p.peso >= 35 && p.peso <= 300) || !(p.altura >= 120 && p.altura <= 220)) {
+    erro('Confira idade (18 a 90), peso (35 a 300 kg) e altura (120 a 220 cm).');
+    return;
+  }
+  metas = calcular(p);
+  perfil = p;
+  store.set('tz_metas', metas);
+  store.set('tz_perfil', p);
+  renderMetas();
+  renderHoje();
+  carregar(true);
+  $('resultado-box').classList.add('hidden');
+  try {
+    const r = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ perfil: p, metas })
     });
-  </script>
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || !data.result) throw new Error(data.error || 'Não foi possível gerar o plano agora.');
+    ultimoTexto = data.result;
+    $('resultado').innerHTML = markdown(data.result);
+    $('resultado-box').classList.remove('hidden');
+    $('resultado-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    erro(err.message + ' Suas metas foram calculadas e já estão disponíveis na aba Hoje.');
+  } finally {
+    carregar(false);
+  }
+});
 
+$('btn-copiar').addEventListener('click', async () => {
+  const b = $('btn-copiar');
+  try {
+    await navigator.clipboard.writeText(ultimoTexto);
+    b.textContent = 'Copiado';
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = ultimoTexto;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    b.textContent = 'Copiado';
+  }
+  setTimeout(() => { b.textContent = 'Copiar resultado'; }, 1800);
+});
+
+renderHoje();
+</script>
 </body>
 </html>
