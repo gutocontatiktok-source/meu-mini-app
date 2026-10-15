@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tirze Forte | Suas metas diárias para o uso da tirzepatida</title>
 <meta name="theme-color" content="#090d16">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tirze Forte">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -99,6 +106,27 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
         </button>
       </form>
     </div>
+    <div id="instalar" class="card p-5 mt-4">
+  <h2 class="font-bold text-white">📲 Instale o app no celular</h2>
+  <p class="text-xs text-gray-400 mt-1">Ele fica na tela inicial como um aplicativo e abre em tela cheia.</p>
+  <div class="flex gap-1 bg-ink border border-line rounded-2xl p-1 mt-4">
+    <button type="button" id="inst-b-ios" class="tab flex-1" aria-selected="true">iPhone</button>
+    <button type="button" id="inst-b-and" class="tab flex-1" aria-selected="false">Android</button>
+  </div>
+  <ol id="inst-ios" class="list-decimal pl-5 mt-4 space-y-2 text-sm text-gray-300">
+    <li>Abra este endereço no <strong class="text-white">Safari</strong> (não funciona em outros navegadores).</li>
+    <li>Toque no botão <strong class="text-white">Compartilhar</strong> (quadrado com uma seta para cima).</li>
+    <li>Role e toque em <strong class="text-white">Adicionar à Tela de Início</strong>.</li>
+    <li>Toque em <strong class="text-white">Adicionar</strong>. O ícone do Tirze Forte aparece na tela.</li>
+  </ol>
+  <ol id="inst-and" class="hidden list-decimal pl-5 mt-4 space-y-2 text-sm text-gray-300">
+    <li>Abra este endereço no <strong class="text-white">Chrome</strong>.</li>
+    <li>Toque no menu <strong class="text-white">⋮</strong> (três pontinhos, no canto superior).</li>
+    <li>Toque em <strong class="text-white">Instalar app</strong> ou <strong class="text-white">Adicionar à tela inicial</strong>.</li>
+    <li>Confirme em <strong class="text-white">Instalar</strong>.</li>
+  </ol>
+  <button type="button" id="inst-agora" class="hidden w-full mt-4 bg-iris hover:bg-violet-300 text-ink font-bold rounded-xl px-5 py-3 transition">Instalar agora</button>
+</div>
     <p class="text-xs text-gray-600 text-center mt-4">Conteúdo educativo. Não substitui médico ou nutricionista.</p>
   </div>
 </section>
@@ -242,6 +270,7 @@ details.g p, details.g li { color: #cbd5e1; line-height: 1.7; }
       <h2 class="font-display text-2xl font-bold text-white">Seu plano</h2>
       <button id="btn-copiar" class="border border-line hover:border-iris text-sm font-semibold rounded-xl px-4 py-2 transition">Copiar resultado</button>
     </div>
+    <p id="plano-info" class="text-xs text-gray-400 mb-4"></p>
     <div id="resultado" class="prose-out"></div>
   </div>
 </section>
