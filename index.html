@@ -13,12 +13,6 @@
     <p class="text-slate-400 text-sm text-center mb-6">Gere uma rotina personalizada com Inteligência Artificial.</p>
 
     <form id="app-form" class="space-y-4">
-      <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Chave da API OpenAI</label>
-        <input type="password" id="apiKey" required placeholder="sk-proj-..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500">
-        <span class="text-[10px] text-slate-500">Sua chave fica segura localmente no seu navegador.</span>
-      </div>
-
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Idade</label>
@@ -51,7 +45,6 @@
     document.getElementById('app-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const apiKey = document.getElementById('apiKey').value;
       const age = document.getElementById('age').value;
       const weight = document.getElementById('weight').value;
       const goal = document.getElementById('goal').value;
@@ -63,33 +56,26 @@
       btnSubmit.disabled = true;
       outputDiv.classList.add('hidden');
 
-      const prompt = `Atue como um nutricionista e personal trainer profissional. Crie uma sugestão resumida e direta de treino diário e meta calórica para uma pessoa de ${age} anos, ${weight}kg, cujo objetivo é: ${goal}. Formate em marcadores curtos e práticos.`;
-
       try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch('/api/generate', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7
-          })
+          body: JSON.stringify({ age, weight, goal })
         });
 
         const data = await response.json();
 
-        if (data.choices && data.choices[0]) {
-          outputDiv.innerText = data.choices[0].message.content;
+        if (response.ok && data.result) {
+          outputDiv.innerText = data.result;
           outputDiv.classList.remove('hidden');
         } else {
-          outputDiv.innerText = 'Erro na resposta da API. Verifique sua chave.';
+          outputDiv.innerText = 'Erro: ' + (data.error || 'Falha ao processar.');
           outputDiv.classList.remove('hidden');
         }
       } catch (err) {
-        outputDiv.innerText = 'Erro ao conectar à API: ' + err.message;
+        outputDiv.innerText = 'Erro de conexão: ' + err.message;
         outputDiv.classList.remove('hidden');
       } finally {
         btnSubmit.innerText = 'Gerar Meu Plano Agora';
