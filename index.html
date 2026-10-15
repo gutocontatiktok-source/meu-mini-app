@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Treino & Dieta com IA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+
+  <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
+    <h1 class="text-2xl font-bold text-emerald-400 text-center mb-2">Treino & Dieta Express</h1>
+    <p class="text-slate-400 text-sm text-center mb-6">Gere uma rotina personalizada com Inteligência Artificial.</p>
+
+    <form id="app-form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Chave da API OpenAI</label>
+        <input type="password" id="apiKey" required placeholder="sk-proj-..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500">
+        <span class="text-[10px] text-slate-500">Sua chave fica segura localmente no seu navegador.</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Idade</label>
+          <input type="number" id="age" required placeholder="Ex: 28" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Peso (kg)</label>
+          <input type="number" id="weight" required placeholder="Ex: 75" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Objetivo Principal</label>
+        <select id="goal" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500">
+          <option value="Perda de gordura e definição">Perda de Gordura</option>
+          <option value="Ganho de massa muscular (Hipertrofia)">Ganho de Massa (Hipertrofia)</option>
+          <option value="Recomposição corporal e condicionamento">Recomposição Corporal</option>
+        </select>
+      </div>
+
+      <button type="submit" id="btn-submit" class="w-full bg-emerald-500 hover:bg-emerald-600 font-semibold py-3 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/20">
+        Gerar Meu Plano Agora
+      </button>
+    </form>
+
+    <div id="output" class="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700 hidden text-sm leading-relaxed text-slate-300 whitespace-pre-wrap"></div>
+  </div>
+
+  <script>
+    document.getElementById('app-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const apiKey = document.getElementById('apiKey').value;
+      const age = document.getElementById('age').value;
+      const weight = document.getElementById('weight').value;
+      const goal = document.getElementById('goal').value;
+      
+      const outputDiv = document.getElementById('output');
+      const btnSubmit = document.getElementById('btn-submit');
+      
+      btnSubmit.innerText = 'Processando com IA...';
+      btnSubmit.disabled = true;
+      outputDiv.classList.add('hidden');
+
+      const prompt = `Atue como um nutricionista e personal trainer profissional. Crie uma sugestão resumida e direta de treino diário e meta calórica para uma pessoa de ${age} anos, ${weight}kg, cujo objetivo é: ${goal}. Formate em marcadores curtos e práticos.`;
+
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.choices && data.choices[0]) {
+          outputDiv.innerText = data.choices[0].message.content;
+          outputDiv.classList.remove('hidden');
+        } else {
+          outputDiv.innerText = 'Erro na resposta da API. Verifique sua chave.';
+          outputDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        outputDiv.innerText = 'Erro ao conectar à API: ' + err.message;
+        outputDiv.classList.remove('hidden');
+      } finally {
+        btnSubmit.innerText = 'Gerar Meu Plano Agora';
+        btnSubmit.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
