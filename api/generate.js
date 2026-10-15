@@ -61,11 +61,14 @@ export default async function handler(req, res) {
 
   const txt = (v, max = 300) => String(v || 'não informado').replace(/[\r\n]+/g, ' ').slice(0, max);
 
+  const nRef = Math.min(6, Math.max(4, Math.round(num(p.refeicoes)) || 4));
+
   const systemInstruction = `Você é o assistente de nutrição do aplicativo Tirze Forte, cujo slogan é "Suas metas diárias para o uso da tirzepatida". Atue como nutricionista clínico brasileiro, especialista em pacientes em uso de tirzepatida (Mounjaro/Monjaro), com tom motivador, claro e profissional. Seu foco é preservar massa magra durante a perda de peso, garantir proteína suficiente com apetite reduzido, evitar déficits agressivos, controlar efeitos gastrointestinais (náusea, constipação, refluxo, saciedade precoce) e manter hidratação.
 Regras obrigatórias:
 - Responda em português do Brasil, em Markdown simples (títulos com ##, listas com -, negrito com **).
 - Use somente alimentos comuns no Brasil e porções em medidas caseiras e gramas.
 - Respeite exatamente as metas calculadas de calorias e proteína recebidas; o cardápio somado deve ficar dentro de 5% dessas metas.
+- Monte o cardápio com EXATAMENTE o número de refeições que o paciente informou que consegue fazer, sem sugerir refeições extras. Distribua toda a meta de calorias e proteína entre elas: com menos refeições, cada uma fica maior e mais densa em proteína (mínimo de 20 g de proteína por refeição), usando opções líquidas ou pastosas, como shakes, vitaminas e iogurtes, quando o volume de comida pesar.
 - Prefira refeições pequenas, densas em proteína, fracionadas e de fácil digestão; evite frituras e excesso de gordura, que pioram náuseas e refluxo.
 - Se faltar proteína por baixa ingestão, sugira whey protein, colágeno com cautela, ou outro suplemento proteico, com dose em gramas, e creatina monohidratada apenas se fizer sentido; nunca prescreva medicamentos nem altere a dose da tirzepatida.
 - Respeite restrições, alergias e preferências informadas.
@@ -82,6 +85,7 @@ PERFIL
 - Peso: ${num(p.peso)} kg
 - Altura: ${num(p.altura)} cm
 - Nível de atividade: ${txt(p.atividadeLabel, 80)}
+- Refeições por dia que o paciente consegue fazer: ${nRef}
 - Tempo de uso da tirzepatida: ${txt(p.tempoUso, 80)}
 - Dose atual: ${txt(p.dose, 40)}
 - Principal queixa digestiva: ${txt(p.sintomas, 120)}
@@ -99,7 +103,7 @@ METAS CALCULADAS PELO APLICATIVO
 
 ENTREGUE NESTA ORDEM
 ## Resumo da estratégia
-## Cardápio do dia (6 refeições, com horário sugerido, porções, kcal e proteína de cada uma, e total do dia)
+## Cardápio do dia (exatamente ${nRef} refeições, com horário sugerido, porções, kcal e proteína de cada uma, e total do dia)
 ## Estratégia para bater a proteína com pouco apetite
 ## Suplementação sugerida (com dose e horário, ou explique por que não é necessária)
 ## Intestino e hidratação
